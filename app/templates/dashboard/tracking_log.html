@@ -1,0 +1,64 @@
+{% extends "dashboard/layout.html" %}
+
+{% macro status_badge(status) -%}
+    {% if status == "Pending" %}
+        <span class="tf-badge pending">{{ status }}</span>
+    {% elif status == "Approved" %}
+        <span class="tf-badge approved">{{ status }}</span>
+    {% elif status == "Rejected" %}
+        <span class="tf-badge rejected">{{ status }}</span>
+    {% else %}
+        <span class="tf-badge info">{{ status }}</span>
+    {% endif %}
+{%- endmacro %}
+
+{% block extra_css %}
+<style>
+    .tf-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: flex-end;
+    }
+
+    .tf-filter-group {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .tf-filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+
+    .tf-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--tf-muted);
+    }
+
+    .tf-empty i {
+        font-size: 2.5rem;
+        opacity: 0.3;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+
+    @media (max-width: 767px) {
+        .tf-filter-group { min-width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tf-page-header">
+    <h1 class="tf-page-title">Tracking Log</h1>
+    <p class="tf-page-subtitle">Operational tracking records from QR scan submissions</p>
+</div>
+
+{% set tracking_form_action = '/dashboard/tracking-log' %}
+{% include "dashboard/partials/tracking_table_panel.html" %}
+{% endblock %}

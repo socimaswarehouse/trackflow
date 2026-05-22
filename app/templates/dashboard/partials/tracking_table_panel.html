@@ -1,0 +1,128 @@
+<div class="tf-panel">
+    <div class="tf-panel-header">
+        <div>
+            <div class="tf-panel-title"><i class="bi bi-table me-2"></i>Operational Tracking Table</div>
+            <div class="tf-panel-subtitle">QR scan submissions - daily monitoring</div>
+        </div>
+        <div class="d-flex gap-2 tf-print-hide">
+            <a href="/dashboard/approvers" class="btn-tf-outline" style="font-size:.8rem;">
+                <i class="bi bi-person-badge me-1"></i>Approvers
+            </a>
+            <button type="button" class="btn-tf-outline" style="font-size:.8rem;" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>Print
+            </button>
+        </div>
+    </div>
+
+    <div class="tf-panel-body tf-print-hide" style="border-bottom:1px solid var(--tf-border); padding-bottom:1.25rem;">
+        <form method="get" action="{{ tracking_form_action | default('/dashboard/tracking-log') }}" class="tf-filter-bar" id="filterForm">
+            <div class="tf-filter-group">
+                <label class="tf-label">Search</label>
+                <input type="text" class="tf-input" name="search" value="{{ search_query }}"
+                       placeholder="Name, invoice, type...">
+            </div>
+            <div class="tf-filter-group" style="min-width:130px; flex:.6;">
+                <label class="tf-label">Status</label>
+                <select class="tf-select" name="status">
+                    <option value="">All Status</option>
+                    {% for st in allowed_statuses %}
+                    <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="tf-filter-group" style="min-width:130px; flex:.6;">
+                <label class="tf-label">Document Type</label>
+                <select class="tf-select" name="document_type">
+                    <option value="">All Types</option>
+                    {% for dt in allowed_document_types %}
+                    <option value="{{ dt }}" {% if selected_document_type == dt %}selected{% endif %}>{{ dt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="tf-filter-group" style="min-width:140px; flex:.7;">
+                <label class="tf-label">Date From</label>
+                <input type="date" class="tf-input" name="date_from" value="{{ selected_date_from }}">
+            </div>
+            <div class="tf-filter-group" style="min-width:140px; flex:.7;">
+                <label class="tf-label">Date To</label>
+                <input type="date" class="tf-input" name="date_to" value="{{ selected_date_to }}">
+            </div>
+            <div class="tf-filter-actions">
+                <button type="submit" class="btn-tf-primary" style="white-space:nowrap;">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+                <a href="{{ tracking_form_action | default('/dashboard/tracking-log') }}" class="btn-tf-outline" style="white-space:nowrap;">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div style="width: 100%; overflow-x: auto;">
+        <table class="tf-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 110px;">Date</th>
+                    <th style="min-width: 120px;">Approval Name</th>
+                    <th style="min-width: 100px;">Doc Type</th>
+                    <th style="min-width: 130px;">Invoice Number</th>
+                    <th style="min-width: 110px;">Qty / Price</th>
+                    <th style="min-width: 150px;">Remarks</th>
+                    <th style="min-width: 130px;">Attachment</th>
+                    <th style="min-width: 100px;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for document in documents %}
+                <tr>
+                    <td style="white-space:nowrap; min-width: 110px;">
+                        <span style="font-size:.82rem; color:var(--tf-muted); display:block;">
+                            {{ document.created_at.strftime("%d %b %Y") if document.created_at else "-" }}
+                        </span>
+                        <span style="font-size:.72rem; color:#94a3b8; display:block;">
+                            {{ document.created_at.strftime("%H:%M") if document.created_at else "" }}
+                        </span>
+                    </td>
+                    <td style="font-weight:600; min-width: 120px;">{{ document.approver.approval_name if document.approver else "-" }}</td>
+                    <td style="min-width: 100px;">
+                        <span class="tf-badge info" style="font-size:.72rem;">{{ document.document_type or "-" }}</span>
+                    </td>
+                    <td style="min-width: 130px;">
+                        <code style="font-size:.82rem; background:#f1f5f9; padding:.15rem .4rem; border-radius:.25rem; word-break: break-word;">
+                            {{ document.invoice_number }}
+                        </code>
+                    </td>
+                    <td style="font-size:.85rem; min-width: 110px;">{{ document.qty_price or "-" }}</td>
+                    <td style="font-size:.82rem; color:var(--tf-muted); min-width: 150px;">
+                        {{ document.notes or "-" }}
+                    </td>
+                    <td style="min-width: 130px;">
+                        {% if document.files %}
+                            {% for file in document.files %}
+                            <a href="/{{ file.file_path }}" target="_blank" class="tf-attachment" title="{{ file.original_name }}">
+                                {% if file.file_type == 'image' %}
+                                    <i class="bi bi-image"></i>
+                                {% else %}
+                                    <i class="bi bi-paperclip"></i>
+                                {% endif %}
+                                {{ file.original_name[:12] }}{% if file.original_name|length > 12 %}...{% endif %}
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <span style="font-size:.78rem; color:#cbd5e1;">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="min-width: 100px;">{{ status_badge(document.status_display) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8">
+                        <div class="tf-empty">
+                            <i class="bi bi-inbox"></i>
+                            <div>No documents found. Submit via QR scan to start tracking.</div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

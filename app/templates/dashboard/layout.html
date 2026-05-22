@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ page_title | default("Dashboard") }} — TRACKFLOW{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        /* ── Design Tokens ──────────────────────────────────────── */
+        :root {
+            --tf-primary:      #0a2e5c;
+            --tf-primary-mid:  #164a8a;
+            --tf-primary-light:#e8f0fe;
+            --tf-accent:       #0ea5e9;
+            --tf-accent-dark:  #0284c7;
+            --tf-success:      #10b981;
+            --tf-success-bg:   #ecfdf5;
+            --tf-warning:      #f59e0b;
+            --tf-warning-bg:   #fffbeb;
+            --tf-danger:       #ef4444;
+            --tf-danger-bg:    #fef2f2;
+            --tf-surface:      #ffffff;
+            --tf-bg:           #f1f5f9;
+            --tf-border:       #e2e8f0;
+            --tf-text:         #1e293b;
+            --tf-muted:        #64748b;
+            --tf-sidebar-w:    250px;
+            --tf-radius:       0.75rem;
+            --tf-radius-sm:    0.5rem;
+            --tf-shadow:       0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.04);
+            --tf-shadow-lg:    0 4px 24px rgba(0,0,0,.10);
+            --tf-transition:   .2s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* ── Reset ──────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            background: var(--tf-bg);
+            color: var(--tf-text);
+            overflow-x: hidden;
+        }
+
+        /* ── Layout Shell ───────────────────────────────────────── */
+        .tf-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar ────────────────────────────────────────────── */
+        .tf-sidebar {
+            width: var(--tf-sidebar-w);
+            background: linear-gradient(180deg, var(--tf-primary) 0%, #071e3d 100%);
+            padding: 1.5rem 1rem 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: transform var(--tf-transition);
+        }
+
+        .tf-sidebar-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 0 0.5rem;
+            margin-bottom: 2.5rem;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+        }
+
+        .tf-sidebar-brand-icon {
+            width: 100%;
+            height: 3.8rem;
+            border-radius: var(--tf-radius-sm);
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+            padding: 0.6rem 1.25rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            transition: transform var(--tf-transition), box-shadow var(--tf-transition);
+        }
+
+        .tf-sidebar-brand-icon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .tf-sidebar-brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .tf-sidebar-brand-copy {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            min-width: 0;
+        }
+
+        .tf-sidebar-brand-text {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 0.005em;
+            line-height: 1.2;
+        }
+
+        .tf-sidebar-brand-subtext {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: rgba(255,255,255,.65);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .tf-nav {
+            list-style: none;
+            flex: 1;
+        }
+
+        .tf-nav-item + .tf-nav-item { margin-top: 0.25rem; }
+
+        .tf-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 1rem;
+            color: rgba(255,255,255,.6);
+            text-decoration: none;
+            border-radius: var(--tf-radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all var(--tf-transition);
+        }
+
+        .tf-nav-link:hover {
+            background: rgba(255,255,255,.08);
+            color: rgba(255,255,255,.9);
+        }
+
+        .tf-nav-link.active {
+            background: rgba(14,165,233,.15);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .tf-nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 1.5rem;
+            border-radius: 0 4px 4px 0;
+            background: var(--tf-accent);
+        }
+
+        .tf-nav-link { position: relative; }
+        .tf-nav-link i { font-size: 1.15rem; width: 1.5rem; text-align: center; }
+
+        .tf-sidebar-footer {
+            padding: 1rem 0.5rem 0;
+            border-top: 1px solid rgba(255,255,255,.08);
+            margin-top: auto;
+        }
+
+        .tf-sidebar-footer small {
+            color: rgba(255,255,255,.3);
+            font-size: 0.7rem;
+        }
+
+        /* ── Main Content ───────────────────────────────────────── */
+        .tf-main {
+            flex: 1;
+            margin-left: var(--tf-sidebar-w);
+            padding: 2rem 2.5rem;
+            min-height: 100vh;
+            min-width: 0;
+        }
+
+        /* ── Page Header ────────────────────────────────────────── */
+        .tf-page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--tf-border);
+        }
+
+        .tf-page-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--tf-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .tf-page-subtitle {
+            color: var(--tf-muted);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        /* ── Metric Cards ───────────────────────────────────────── */
+        .tf-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .tf-metric-card {
+            background: var(--tf-surface);
+            border-radius: var(--tf-radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--tf-shadow);
+            border: 1px solid var(--tf-border);
+            transition: transform var(--tf-transition), box-shadow var(--tf-transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tf-metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .tf-metric-card.primary::before   { background: var(--tf-primary-mid); }
+        .tf-metric-card.success::before    { background: var(--tf-success); }
+        .tf-metric-card.warning::before    { background: var(--tf-warning); }
+        .tf-metric-card.danger::before     { background: var(--tf-danger); }
+        .tf-metric-card.accent::before     { background: var(--tf-accent); }
+
+        .tf-metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--tf-shadow-lg);
+        }
+
+        .tf-metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .tf-metric-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: var(--tf-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .tf-metric-icon.primary   { background: var(--tf-primary-light); color: var(--tf-primary-mid); }
+        .tf-metric-icon.success   { background: var(--tf-success-bg); color: var(--tf-success); }
+        .tf-metric-icon.warning   { background: var(--tf-warning-bg); color: var(--tf-warning); }
+        .tf-metric-icon.danger    { background: var(--tf-danger-bg); color: var(--tf-danger); }
+        .tf-metric-icon.accent    { background: rgba(14,165,233,.1); color: var(--tf-accent); }
+
+        .tf-metric-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--tf-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .tf-metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--tf-text);
+            line-height: 1.2;
+        }
+
+        .tf-metric-desc {
+            font-size: 0.78rem;
+            color: var(--tf-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* ── Panel Card ─────────────────────────────────────────── */
+        .tf-panel {
+            background: var(--tf-surface);
+            border-radius: var(--tf-radius);
+            box-shadow: var(--tf-shadow);
+            border: 1px solid var(--tf-border);
+            margin-bottom: 1.5rem;
+        }
+
+        .tf-panel-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--tf-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .tf-panel-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--tf-primary);
+        }
+
+        .tf-panel-subtitle {
+            font-size: 0.8rem;
+            color: var(--tf-muted);
+            margin-top: 0.15rem;
+        }
+
+        .tf-panel-body {
+            padding: 1.5rem;
+        }
+
+        /* ── Table Styling ──────────────────────────────────────── */
+        .tf-table {
+            width: 100%;
+            font-size: 0.875rem;
+            border-collapse: collapse;
+        }
+
+        .tf-table thead th {
+            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--tf-muted);
+            border-bottom: 2px solid var(--tf-border);
+            white-space: nowrap;
+        }
+
+        .tf-table tbody td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .tf-table tbody tr {
+            transition: background var(--tf-transition);
+        }
+
+        .tf-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* ── Status Badge ───────────────────────────────────────── */
+        .tf-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        .tf-badge.pending  { background: var(--tf-warning-bg); color: #92400e; }
+        .tf-badge.approved { background: var(--tf-success-bg); color: #065f46; }
+        .tf-badge.rejected { background: var(--tf-danger-bg); color: #991b1b; }
+        .tf-badge.info     { background: var(--tf-primary-light); color: var(--tf-primary-mid); }
+        .tf-badge.ready    { background: var(--tf-success-bg); color: #065f46; }
+
+        .tf-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .tf-badge.pending::before  { background: var(--tf-warning); }
+        .tf-badge.approved::before { background: var(--tf-success); }
+        .tf-badge.rejected::before { background: var(--tf-danger); }
+        .tf-badge.ready::before    { background: var(--tf-success); }
+
+        /* ── Button Overrides ───────────────────────────────────── */
+        .btn-tf-primary {
+            background: linear-gradient(135deg, var(--tf-primary-mid), var(--tf-primary));
+            color: #fff;
+            border: none;
+            border-radius: var(--tf-radius-sm);
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.55rem 1.25rem;
+            transition: all var(--tf-transition);
+        }
+
+        .btn-tf-primary:hover {
+            background: linear-gradient(135deg, var(--tf-primary), #061b3e);
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(10,46,92,.25);
+        }
+
+        .btn-tf-outline {
+            background: transparent;
+            color: var(--tf-primary-mid);
+            border: 1.5px solid var(--tf-border);
+            border-radius: var(--tf-radius-sm);
+            font-weight: 500;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            transition: all var(--tf-transition);
+            white-space: nowrap;
+        }
+
+        .btn-tf-outline:hover {
+            border-color: var(--tf-primary-mid);
+            background: var(--tf-primary-light);
+            color: var(--tf-primary);
+        }
+
+        /* ── Form Controls ──────────────────────────────────────── */
+        .tf-input,
+        .tf-select {
+            font-family: inherit;
+            font-size: 0.875rem;
+            padding: 0.6rem 0.85rem;
+            border: 1.5px solid var(--tf-border);
+            border-radius: var(--tf-radius-sm);
+            color: var(--tf-text);
+            background: #fff;
+            transition: border-color var(--tf-transition), box-shadow var(--tf-transition);
+            width: 100%;
+        }
+
+        .tf-input:focus,
+        .tf-select:focus {
+            outline: none;
+            border-color: var(--tf-accent);
+            box-shadow: 0 0 0 3px rgba(14,165,233,.12);
+        }
+
+        .tf-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--tf-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.4rem;
+            display: block;
+        }
+
+        /* ── Alerts ─────────────────────────────────────────────── */
+        .tf-alert {
+            padding: 0.85rem 1.15rem;
+            border-radius: var(--tf-radius-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        .tf-alert-success {
+            background: var(--tf-success-bg);
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .tf-alert-error {
+            background: var(--tf-danger-bg);
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* ── Attachment Chip ────────────────────────────────────── */
+        .tf-attachment {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.2rem 0.6rem;
+            background: var(--tf-primary-light);
+            color: var(--tf-primary-mid);
+            border-radius: 1rem;
+            font-size: 0.72rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background var(--tf-transition);
+            white-space: nowrap;
+        }
+
+        .tf-attachment:hover {
+            background: #d4e4f7;
+            color: var(--tf-primary);
+        }
+
+        .tf-attachment i { font-size: 0.8rem; }
+
+        /* ── Mobile Toggle ──────────────────────────────────────── */
+        .tf-mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1100;
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: var(--tf-radius-sm);
+            background: var(--tf-primary);
+            color: #fff;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: var(--tf-shadow-lg);
+        }
+
+        .tf-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.4);
+            z-index: 999;
+        }
+
+        /* ── Responsive ─────────────────────────────────────────── */
+        @media (max-width: 991px) {
+            .tf-sidebar {
+                transform: translateX(-100%);
+            }
+
+            .tf-sidebar.open {
+                transform: translateX(0);
+            }
+
+            .tf-overlay.open {
+                display: block;
+            }
+
+            .tf-mobile-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .tf-main {
+                margin-left: 0;
+                padding: 4.5rem 1rem 2rem;
+            }
+
+            .tf-page-title { font-size: 1.35rem; }
+
+            .tf-metrics {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .tf-metric-value { font-size: 1.5rem; }
+            .tf-metric-desc { display: none; }
+        }
+
+        @media (max-width: 575px) {
+            .tf-metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .tf-main { padding: 4rem 0.75rem 1.5rem; }
+
+            .tf-panel-header { padding: 1rem; }
+            .tf-panel-body { padding: 1rem; }
+        }
+
+        @media print {
+            .tf-sidebar,
+            .tf-mobile-toggle,
+            .tf-overlay,
+            .tf-print-hide {
+                display: none !important;
+            }
+
+            .tf-main {
+                margin-left: 0;
+                padding: 0;
+            }
+
+            body { background: #fff; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Toggle -->
+    <button class="tf-mobile-toggle" id="tfMobileToggle" aria-label="Toggle menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div class="tf-overlay" id="tfOverlay"></div>
+
+    <div class="tf-layout">
+        <!-- Sidebar -->
+        <nav class="tf-sidebar" id="tfSidebar">
+            <a href="/dashboard" class="tf-sidebar-brand">
+                <div class="tf-sidebar-brand-icon">
+                    <img src="/static/branding/logo_sinarmas.png" alt="Sinarmas logo">
+                </div>
+                <div class="tf-sidebar-brand-copy">
+                    <span class="tf-sidebar-brand-text">Document Tracking</span>
+                    <span class="tf-sidebar-brand-subtext">Sinarmas</span>
+                </div>
+            </a>
+
+            <ul class="tf-nav">
+                <li class="tf-nav-item">
+                    <a href="/dashboard" class="tf-nav-link {% if active_menu == 'dashboard' %}active{% endif %}">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="tf-nav-item">
+                    <a href="/dashboard/approvers" class="tf-nav-link {% if active_menu == 'approvers' %}active{% endif %}">
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span>Approvers</span>
+                    </a>
+                </li>
+                <li class="tf-nav-item">
+                    <a href="/dashboard/tracking-log" class="tf-nav-link {% if active_menu == 'tracking_log' %}active{% endif %}">
+                        <i class="bi bi-table"></i>
+                        <span>Tracking Log</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tf-sidebar-footer">
+                <small>TRACKFLOW</small>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="tf-main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+    (function() {
+        const toggle  = document.getElementById('tfMobileToggle');
+        const sidebar = document.getElementById('tfSidebar');
+        const overlay = document.getElementById('tfOverlay');
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+        }
+
+        toggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        });
+
+        overlay.addEventListener('click', closeSidebar);
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

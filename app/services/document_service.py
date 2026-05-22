@@ -1,0 +1,96 @@
+"""Document service operations."""
+
+from datetime import datetime
+from pathlib import Path
+
+from sqlalchemy.orm import Session
+
+from app.models.document import Document
+from app.models.document_file import DocumentFile
+from app.models.user import User
+from app.schemas.document_schema import DocumentSubmissionSchema
+from app.services.status_service import attach_display_status, to_database_status
+
+
+def create_document(
+    db: Session,
+    approver_id: int,
+    document_data: DocumentSubmissionSchema,
+) -> Document:
+    submitter_id = _get_default_submitter_id(db)
+    timestamp = datetime.utcnow()
+    database_status = to_database_status(document_data.status)
+    if database_status is None:
+        raise ValueError("Invalid document status.")
+
+    document = Document(
+        doc_number=_generate_doc_number(),
+        document_type=document_data.document_type,
+        invoice_number=document_data.invoice_number,
+        title=f"{document_data.document_type} Tracking",
+        submitter_id=submitter_id,
+        approver_id=approver_id,
+        status=database_status,
+        qty_price=document_data.qty_price,
+        notes=document_data.notes,
+        submitted_at=timestamp,
+        created_at=timestamp,
+        updated_at=timestamp,
+    )
+
+    db.add(document)
+    db.flush()
+    db.commit()
+    db.refresh(document)
+    return attach_display_status(document)
+
+
+def attach_file_to_document(
+    db: Session,
+    document_id: int,
+    uploaded_by: int,
+    original_name: str,
+    stored_name: str,
+    file_path: str,
+    content_type: str,
+    file_size: int,
+) -> DocumentFile:
+    """Attach an uploaded file to a document record."""
+    extension = Path(original_name).suffix.lower().lstrip(".")
+    file_type = "image" if content_type.startswith("image/") else "document"
+
+    doc_file = DocumentFile(
+        document_id=document_id,
+        uploaded_by=uploaded_by,
+        original_name=original_name,
+        stored_name=stored_name,
+        file_path=file_path,
+        file_type=file_type,
+        mime_type=content_type,
+        file_size=file_size,
+        file_extension=extension or None,
+        is_primary=True,
+        created_at=datetime.utcnow(),
+    )
+
+    db.add(doc_file)
+    db.commit()
+    db.refresh(doc_file)
+    return doc_file
+
+
+def _get_default_submitter_id(db: Session) -> int:
+    user = (
+        db.query(User)
+        .filter(User.is_active.is_(True))
+        .order_by(User.id.asc())
+        .first()
+    )
+    if user is None:
+        raise ValueError("No active user available for document submission")
+
+    return user.id
+
+
+def _generate_doc_number() -> str:
+    return f"DOC-{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"

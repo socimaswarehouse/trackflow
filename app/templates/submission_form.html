@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f3460">
+    <meta name="description" content="TRACKFLOW – QR Document Approval Tracking Submission">
+    <title>TRACKFLOW – Document Submission</title>
+
+    <!-- Bootstrap 5.3 -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous"
+    >
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Design Tokens ──────────────────────────────────────────── */
+        :root {
+            --tf-primary:       #0f3460;
+            --tf-primary-mid:   #16537e;
+            --tf-accent:        #0d7a55;
+            --tf-accent-light:  rgba(13, 122, 85, 0.10);
+            --tf-danger:        #c0392b;
+            --tf-bg:            #f0f4f8;
+            --tf-card:          #ffffff;
+            --tf-border:        #dce4ed;
+            --tf-text:          #14212b;
+            --tf-muted:         #6b7c8f;
+            --tf-success-bg:    #ecfdf5;
+            --tf-success-text:  #065f46;
+            --tf-error-bg:      #fef2f2;
+            --tf-error-text:    #991b1b;
+            --tf-radius:        1rem;
+            --tf-radius-sm:     0.6rem;
+            --tf-shadow:        0 8px 32px rgba(15, 52, 96, 0.10);
+            --tf-shadow-sm:     0 2px 8px rgba(15, 52, 96, 0.07);
+        }
+
+        /* ── Base ───────────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 0.9375rem;
+            background: linear-gradient(160deg, #e8eef5 0%, #f5f8fb 100%);
+            color: var(--tf-text);
+            min-height: 100dvh;
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+        }
+
+        /* ── Page Shell ─────────────────────────────────────────────── */
+        .tf-page {
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem 0.75rem 2rem;
+        }
+
+        /* ── Header Bar ─────────────────────────────────────────────── */
+        .tf-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .tf-brand-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .tf-brand-logo {
+            width: min(100%, 220px);
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        .tf-attachment-card {
+            border: 1px dashed rgba(15, 52, 96, 0.25);
+            border-radius: var(--tf-radius-sm);
+            background: #f8fbff;
+            padding: 1rem;
+        }
+
+        .tf-attachment-copy {
+            font-size: 0.78rem;
+            color: var(--tf-muted);
+            margin-bottom: 0.9rem;
+        }
+
+        .tf-attachment-actions {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .tf-upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            width: 100%;
+            min-height: 2.9rem;
+            padding: 0.85rem 1rem;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--tf-primary);
+            background: #fff;
+            border: 1.5px solid rgba(15, 52, 96, 0.18);
+            border-radius: var(--tf-radius-sm);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+        }
+
+        .tf-upload-btn:hover,
+        .tf-upload-btn:focus-visible {
+            border-color: var(--tf-primary);
+            box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.08);
+            outline: none;
+        }
+
+        .tf-upload-btn:active {
+            transform: scale(0.99);
+        }
+
+        .tf-file-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .tf-file-preview {
+            margin-top: 0.85rem;
+            padding: 0.75rem 0.85rem;
+            border-radius: 0.8rem;
+            background: rgba(13, 122, 85, 0.08);
+            color: var(--tf-accent);
+            font-size: 0.8rem;
+            display: none;
+            align-items: center;
+            gap: 0.55rem;
+            word-break: break-word;
+        }
+
+        .tf-file-preview.active {
+            display: flex;
+        }
+
+        .tf-file-preview strong {
+            color: var(--tf-primary);
+        }
+
+        /* ── Card ───────────────────────────────────────────────────── */
+        .tf-card {
+            background: var(--tf-card);
+            border-radius: var(--tf-radius);
+            box-shadow: var(--tf-shadow);
+            border: 1px solid var(--tf-border);
+            overflow: hidden;
+        }
+
+        /* ── Card Hero Strip ────────────────────────────────────────── */
+        .tf-card-hero {
+            background: linear-gradient(135deg, var(--tf-primary) 0%, var(--tf-primary-mid) 100%);
+            color: #fff;
+            padding: 1.25rem 1.25rem 1rem;
+        }
+
+        .tf-card-hero h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .tf-card-hero p {
+            font-size: 0.8rem;
+            opacity: 0.78;
+            margin-bottom: 0;
+        }
+
+        /* ── Approver Block ─────────────────────────────────────────── */
+        .tf-approver-block {
+            background: var(--tf-accent-light);
+            border: 1px solid rgba(13, 122, 85, 0.18);
+            border-radius: var(--tf-radius-sm);
+            padding: 0.85rem 1rem;
+        }
+
+        .tf-approver-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--tf-accent);
+            margin-bottom: 0.2rem;
+        }
+
+        .tf-approver-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--tf-primary);
+            line-height: 1.3;
+        }
+
+        .tf-approver-dept {
+            font-size: 0.78rem;
+            color: var(--tf-muted);
+            margin-top: 0.15rem;
+        }
+
+        /* ── Card Body ──────────────────────────────────────────────── */
+        .tf-card-body {
+            padding: 1.25rem;
+        }
+
+        /* ── Alert Banners ──────────────────────────────────────────── */
+        .tf-alert {
+            border-radius: var(--tf-radius-sm);
+            padding: 0.85rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            border: 1px solid transparent;
+            margin-bottom: 1.1rem;
+        }
+
+        .tf-alert i {
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+
+        .tf-alert-success {
+            background: var(--tf-success-bg);
+            color: var(--tf-success-text);
+            border-color: #a7f3d0;
+        }
+
+        .tf-alert-error {
+            background: var(--tf-error-bg);
+            color: var(--tf-error-text);
+            border-color: #fecaca;
+        }
+
+        /* ── Divider ────────────────────────────────────────────────── */
+        .tf-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--tf-muted);
+            margin-bottom: 0.9rem;
+            margin-top: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tf-section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--tf-border);
+        }
+
+        /* ── Form Controls ──────────────────────────────────────────── */
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--tf-text);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-label .tf-required {
+            color: var(--tf-danger);
+            margin-left: 0.2rem;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 0.9375rem;
+            border-radius: var(--tf-radius-sm);
+            border: 1.5px solid var(--tf-border);
+            padding: 0.7rem 0.85rem;
+            color: var(--tf-text);
+            background-color: #fafcff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            min-height: 2.8rem;       /* comfortable touch target */
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--tf-primary);
+            box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.10);
+            background-color: #fff;
+            outline: none;
+        }
+
+        .form-control[readonly] {
+            background-color: #f1f5f9;
+            color: var(--tf-muted);
+            cursor: not-allowed;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 6rem;
+        }
+
+        /* Bootstrap validation overrides */
+        .was-validated .form-control:invalid,
+        .was-validated .form-select:invalid {
+            border-color: var(--tf-danger);
+        }
+
+        .was-validated .form-control:valid,
+        .was-validated .form-select:valid {
+            border-color: var(--tf-accent);
+        }
+
+        .invalid-feedback {
+            font-size: 0.78rem;
+        }
+
+        /* ── Submit Button ───────────────────────────────────────────── */
+        .tf-submit-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            width: 100%;
+            padding: 0.9rem 1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #fff;
+            background: linear-gradient(135deg, var(--tf-primary) 0%, var(--tf-primary-mid) 100%);
+            border: none;
+            border-radius: var(--tf-radius-sm);
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 3.2rem;      /* large touch target */
+        }
+
+        .tf-submit-btn:hover { opacity: 0.9; }
+        .tf-submit-btn:active { transform: scale(0.98); }
+        .tf-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Footer ─────────────────────────────────────────────────── */
+        .tf-footer {
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--tf-muted);
+            margin-top: 1.25rem;
+            padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+
+        /* ── Loading Overlay ────────────────────────────────────────── */
+        .tf-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 52, 96, 0.18);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .tf-loading-overlay.active {
+            display: flex;
+        }
+
+        .tf-spinner {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 3px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: tf-spin 0.7s linear infinite;
+        }
+
+        @keyframes tf-spin { to { transform: rotate(360deg); } }
+
+        /* ── Responsive Tweaks ──────────────────────────────────────── */
+        @media (min-width: 480px) {
+            .tf-page { padding: 1.5rem 1rem 2.5rem; }
+            .tf-card-body { padding: 1.5rem; }
+        }
+
+        @media (min-width: 768px) {
+            .tf-page {
+                max-width: 560px;
+                margin: 0 auto;
+                padding: 2.5rem 0 3rem;
+            }
+            .tf-card-hero { padding: 1.5rem 1.5rem 1.25rem; }
+            .tf-card-hero h1 { font-size: 1.25rem; }
+            .tf-card-body { padding: 1.75rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div class="tf-loading-overlay" id="tfLoadingOverlay" aria-hidden="true">
+        <div class="tf-spinner"></div>
+    </div>
+
+    <div class="tf-page">
+
+        <!-- Header -->
+        <header class="tf-header">
+            <a href="/" class="tf-brand-link" aria-label="Sinarmas">
+                <img
+                    src="/static/branding/logo_sinarmas.png"
+                    alt="Sinarmas"
+                    class="tf-brand-logo"
+                >
+            </a>
+        </header>
+
+        <!-- Main Card -->
+        <div class="tf-card" role="main">
+
+            <!-- Hero Strip -->
+            <div class="tf-card-hero">
+                <h1>Document Tracking Update</h1>
+                <p>Fill in the details below and submit to sync with the dashboard.</p>
+            </div>
+
+            <!-- Card Body -->
+            <div class="tf-card-body">
+
+                <!-- Approver Display -->
+                <div class="tf-approver-block mb-4" role="region" aria-label="Approver information">
+                    <div class="tf-approver-label">
+                        <i class="bi bi-person-badge"></i>&nbsp; Approval Name
+                    </div>
+                    <div class="tf-approver-name">{{ approver.approval_name }}</div>
+                    {% if approver.department %}
+                    <div class="tf-approver-dept">{{ approver.department }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Success Alert -->
+                {% if success_message %}
+                <div class="tf-alert tf-alert-success" role="alert" id="tf-success-banner">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <div>
+                        <strong>Document tracking successfully submitted.</strong><br>
+                        <span style="font-weight:400; font-size:0.82rem;">{{ success_message }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Error Alert -->
+                {% if error_message %}
+                <div class="tf-alert tf-alert-error" role="alert" id="tf-error-banner">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span>{{ error_message }}</span>
+                </div>
+                {% endif %}
+
+                <!-- Submission Form -->
+                <form
+                    id="tfSubmissionForm"
+                    method="post"
+                    action="{{ request.url.path }}"
+                    enctype="multipart/form-data"
+                    novalidate
+                >
+                    <!-- Section: Document Info -->
+                    <div class="tf-section-title">Document Information</div>
+
+                    <!-- Document Type -->
+                    <div class="mb-3">
+                        <label for="document_type" class="form-label">
+                            Document Type <span class="tf-required" aria-hidden="true">*</span>
+                        </label>
+                        <select
+                            class="form-select"
+                            id="document_type"
+                            name="document_type"
+                            required
+                            aria-required="true"
+                        >
+                            {% for doc_type in allowed_document_types %}
+                            <option
+                                value="{{ doc_type }}"
+                                {% if form_data.document_type == doc_type %}selected{% endif %}
+                            >{{ doc_type }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a document type.</div>
+                    </div>
+
+                    <!-- Invoice Number -->
+                    <div class="mb-3">
+                        <label for="invoice_number" class="form-label">
+                            Invoice Number <span class="tf-required" aria-hidden="true">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="invoice_number"
+                            name="invoice_number"
+                            placeholder="e.g. INV-2024-00123"
+                            value="{{ form_data.invoice_number if form_data else '' }}"
+                            required
+                            aria-required="true"
+                            autocomplete="off"
+                            inputmode="text"
+                        >
+                        <div class="invalid-feedback">Invoice number is required.</div>
+                    </div>
+
+                    <!-- Qty Price -->
+                    <div class="mb-3">
+                        <label for="qty_price" class="form-label">
+                            Qty / Price <span class="tf-required" aria-hidden="true">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="qty_price"
+                            name="qty_price"
+                            placeholder="e.g. 12 x Rp 250.000"
+                            value="{{ form_data.qty_price if form_data else '' }}"
+                            required
+                            aria-required="true"
+                            autocomplete="off"
+                        >
+                        <div class="invalid-feedback">Qty / Price is required.</div>
+                    </div>
+
+                    <!-- Section: Status -->
+                    <div class="tf-section-title">Approval Status</div>
+
+                    <!-- Status -->
+                    <div class="mb-3">
+                        <label for="status" class="form-label">
+                            Status <span class="tf-required" aria-hidden="true">*</span>
+                        </label>
+                        <select
+                            class="form-select"
+                            id="status"
+                            name="status"
+                            required
+                            aria-required="true"
+                        >
+                            {% for st in allowed_statuses %}
+                            <option
+                                value="{{ st }}"
+                                {% if form_data.status == st %}selected{% endif %}
+                            >{{ st }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a status.</div>
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Remarks</label>
+                        <textarea
+                            class="form-control"
+                            id="notes"
+                            name="notes"
+                            rows="4"
+                            placeholder="Optional: add approval notes or remarks"
+                            aria-label="Remarks"
+                        >{{ form_data.notes if form_data else '' }}</textarea>
+                    </div>
+
+                    <div class="tf-section-title">Attachment Upload</div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="attachment">Upload File / Foto Dokumen</label>
+                        <div class="tf-attachment-card">
+                            <div class="tf-attachment-copy">
+                                Anda bisa upload file dari HP atau langsung foto dari kamera. File yang dikirim akan ikut tersimpan ke dashboard dan tampil di Operational Tracking Table.
+                            </div>
+
+                            <div class="tf-attachment-actions">
+                                <label for="attachment" class="tf-upload-btn">
+                                    <i class="bi bi-upload"></i>
+                                    Pilih File dari HP
+                                </label>
+                                <input
+                                    type="file"
+                                    class="tf-file-input"
+                                    id="attachment"
+                                    name="attachment"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,image/*"
+                                >
+
+                                <label for="camera_attachment" class="tf-upload-btn">
+                                    <i class="bi bi-camera-fill"></i>
+                                    Ambil Foto dari Kamera
+                                </label>
+                                <input
+                                    type="file"
+                                    class="tf-file-input"
+                                    id="camera_attachment"
+                                    name="camera_attachment"
+                                    accept="image/*"
+                                    capture="environment"
+                                >
+                            </div>
+
+                            <div class="tf-file-preview" id="tfFilePreview" aria-live="polite">
+                                <i class="bi bi-paperclip"></i>
+                                <span>File terpilih: <strong id="tfFilePreviewName">-</strong></span>
+                            </div>
+
+                            <div class="mt-2" style="font-size:0.74rem; color: var(--tf-muted);">
+                                Maksimum ukuran file 10 MB.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden: Approval Name (readonly display already shown above) -->
+                    <!-- approval_name is resolved via slug on backend — no hidden field needed -->
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="tf-submit-btn" id="tfSubmitBtn">
+                        <i class="bi bi-send-fill"></i>
+                        Submit Tracking Update
+                    </button>
+
+                    <p class="text-center mt-3" style="font-size:0.75rem; color: var(--tf-muted);">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Data will be saved and synced to the operational dashboard.
+                    </p>
+                </form>
+
+            </div><!-- /tf-card-body -->
+        </div><!-- /tf-card -->
+
+        <!-- Footer -->
+        <footer class="tf-footer">
+            TRACKFLOW &middot; QR Document Approval Tracking System
+        </footer>
+
+    </div><!-- /tf-page -->
+
+    <!-- Bootstrap JS Bundle -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"
+    ></script>
+
+    <script>
+    (function () {
+        "use strict";
+
+        /* ── Bootstrap client-side validation ───────────────────── */
+        const form    = document.getElementById("tfSubmissionForm");
+        const btn     = document.getElementById("tfSubmitBtn");
+        const overlay = document.getElementById("tfLoadingOverlay");
+        const fileInput = document.getElementById("attachment");
+        const cameraInput = document.getElementById("camera_attachment");
+        const filePreview = document.getElementById("tfFilePreview");
+        const filePreviewName = document.getElementById("tfFilePreviewName");
+
+        function setSelectedFile(activeInput, inactiveInput) {
+            const selectedFile = activeInput.files && activeInput.files[0];
+            if (!selectedFile) {
+                if (!(inactiveInput.files && inactiveInput.files[0])) {
+                    filePreview.classList.remove("active");
+                    filePreviewName.textContent = "-";
+                }
+                return;
+            }
+
+            inactiveInput.value = "";
+            filePreview.classList.add("active");
+            filePreviewName.textContent = selectedFile.name;
+        }
+
+        fileInput.addEventListener("change", function () {
+            setSelectedFile(fileInput, cameraInput);
+        });
+
+        cameraInput.addEventListener("change", function () {
+            setSelectedFile(cameraInput, fileInput);
+        });
+
+        form.addEventListener("submit", function (e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+                form.classList.add("was-validated");
+
+                /* Scroll to first invalid field */
+                const firstInvalid = form.querySelector(":invalid");
+                if (firstInvalid) {
+                    firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+                    firstInvalid.focus();
+                }
+                return;
+            }
+
+            /* Show loading state */
+            btn.disabled = true;
+            btn.innerHTML = '<span class="tf-spinner" style="width:1.2rem;height:1.2rem;border-width:2px;"></span> Submitting…';
+            overlay.classList.add("active");
+            overlay.setAttribute("aria-hidden", "false");
+        });
+
+        /* ── Auto-scroll to success/error banner ─────────────── */
+        const banner =
+            document.getElementById("tf-success-banner") ||
+            document.getElementById("tf-error-banner");
+
+        if (banner) {
+            setTimeout(function () {
+                banner.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 120);
+        }
+    })();
+    </script>
+</body>
+</html>

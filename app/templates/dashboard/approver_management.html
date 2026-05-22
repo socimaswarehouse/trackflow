@@ -1,0 +1,510 @@
+{% extends "dashboard/layout.html" %}
+
+{% block extra_css %}
+<style>
+    .tf-form-card {
+        background: var(--tf-surface);
+        border-radius: var(--tf-radius);
+        box-shadow: var(--tf-shadow);
+        border: 1px solid var(--tf-border);
+        overflow: hidden;
+    }
+
+    .tf-form-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--tf-border);
+    }
+
+    .tf-form-header-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--tf-primary);
+    }
+
+    .tf-form-header-sub {
+        font-size: 0.8rem;
+        color: var(--tf-muted);
+        margin-top: 0.15rem;
+    }
+
+    .tf-form-body {
+        padding: 1.5rem;
+    }
+
+    .tf-form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .tf-form-group label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--tf-text);
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+
+    .tf-form-group label .req {
+        color: var(--tf-danger);
+        margin-left: 0.15rem;
+    }
+
+    .tf-form-group .tf-hint {
+        font-size: 0.72rem;
+        color: var(--tf-muted);
+        margin-top: 0.3rem;
+    }
+
+    .tf-form-group input[type="text"] {
+        font-family: inherit;
+        font-size: 0.875rem;
+        padding: 0.65rem 0.85rem;
+        border: 1.5px solid var(--tf-border);
+        border-radius: var(--tf-radius-sm);
+        width: 100%;
+        color: var(--tf-text);
+        background: #fff;
+        transition: border-color var(--tf-transition), box-shadow var(--tf-transition);
+    }
+
+    .tf-form-group input::placeholder {
+        color: transparent;
+    }
+
+    .tf-form-group input:focus {
+        outline: none;
+        border-color: var(--tf-accent);
+        box-shadow: 0 0 0 3px rgba(14,165,233,.12);
+    }
+
+    .tf-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        cursor: pointer;
+    }
+
+    .tf-checkbox input {
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-top: 0.1rem;
+        accent-color: var(--tf-primary-mid);
+        cursor: pointer;
+    }
+
+    .tf-checkbox-label {
+        font-size: 0.85rem;
+        color: var(--tf-text);
+        line-height: 1.4;
+    }
+
+    .tf-form-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    .tf-form-actions .btn-tf-primary { flex: 1; }
+
+    /* ── Approver table slug ──────────────────────────────── */
+    .tf-slug {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-size: 0.78rem;
+        background: #f1f5f9;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+        color: var(--tf-primary-mid);
+    }
+
+    /* ── Action buttons ──────────────────────────────────── */
+    .tf-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: var(--tf-radius-sm);
+        border: 1.5px solid var(--tf-border);
+        background: transparent;
+        color: var(--tf-primary-mid);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all var(--tf-transition);
+        text-decoration: none;
+    }
+
+    .tf-action-btn:hover {
+        background: var(--tf-primary-light);
+        border-color: var(--tf-primary-mid);
+        color: var(--tf-primary);
+    }
+
+    .tf-action-btn.danger:hover {
+        background: var(--tf-danger-bg);
+        border-color: var(--tf-danger);
+        color: var(--tf-danger);
+    }
+
+    .tf-action-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    /* Modal styles */
+    .tf-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.5);
+        z-index: 1050;
+    }
+
+    .tf-modal-backdrop.show {
+        display: block;
+    }
+
+    .tf-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--tf-surface);
+        border-radius: var(--tf-radius);
+        box-shadow: var(--tf-shadow-lg);
+        z-index: 1051;
+        max-width: 400px;
+        width: 90%;
+        border: 1px solid var(--tf-border);
+    }
+
+    .tf-modal.show {
+        display: block;
+    }
+
+    .tf-modal-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--tf-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tf-modal-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--tf-primary);
+    }
+
+    .tf-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--tf-muted);
+        cursor: pointer;
+        padding: 0;
+        transition: color var(--tf-transition);
+    }
+
+    .tf-modal-close:hover {
+        color: var(--tf-text);
+    }
+
+    .tf-modal-body {
+        padding: 1.5rem;
+    }
+
+    .tf-modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--tf-border);
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .tf-modal-footer button {
+        padding: 0.55rem 1.25rem;
+        font-size: 0.85rem;
+        border-radius: var(--tf-radius-sm);
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all var(--tf-transition);
+    }
+
+    .tf-modal-footer .btn-cancel {
+        background: transparent;
+        color: var(--tf-primary-mid);
+        border: 1.5px solid var(--tf-border);
+    }
+
+    .tf-modal-footer .btn-cancel:hover {
+        background: var(--tf-primary-light);
+        border-color: var(--tf-primary-mid);
+    }
+
+    .tf-modal-footer .btn-delete {
+        background: var(--tf-danger);
+        color: #fff;
+    }
+
+    .tf-modal-footer .btn-delete:hover {
+        background: #dc2626;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="tf-page-header">
+    <h1 class="tf-page-title">Approver Management</h1>
+    <p class="tf-page-subtitle">Create and manage approval identities for QR-based document tracking</p>
+</div>
+
+<!-- Key Metrics -->
+<section class="tf-metrics">
+    <div class="tf-metric-card primary">
+        <div class="tf-metric-header">
+            <div class="tf-metric-icon primary"><i class="bi bi-people"></i></div>
+            <span class="tf-metric-label">Approvers</span>
+        </div>
+        <div class="tf-metric-value">{{ approver_count }}</div>
+        <div class="tf-metric-desc">Registered approval identities</div>
+    </div>
+    <div class="tf-metric-card accent">
+        <div class="tf-metric-header">
+            <div class="tf-metric-icon accent"><i class="bi bi-qr-code"></i></div>
+            <span class="tf-metric-label">QR Generated</span>
+        </div>
+        <div class="tf-metric-value">{{ generated_qr_count }}</div>
+        <div class="tf-metric-desc">Ready for deployment</div>
+    </div>
+    <div class="tf-metric-card success">
+        <div class="tf-metric-header">
+            <div class="tf-metric-icon success"><i class="bi bi-file-earmark-check"></i></div>
+            <span class="tf-metric-label">Tracked Docs</span>
+        </div>
+        <div class="tf-metric-value">{{ document_count }}</div>
+        <div class="tf-metric-desc">Documents in QR workflow</div>
+    </div>
+</section>
+
+<!-- Main Content -->
+<div class="row g-4">
+    <!-- Approver List -->
+    <div class="col-12">
+        <div class="tf-panel">
+            <div class="tf-panel-header">
+                <div>
+                    <div class="tf-panel-title"><i class="bi bi-list-check me-2"></i>Approver List</div>
+                    <div class="tf-panel-subtitle">Manage QR codes and approval points</div>
+                </div>
+                <a href="/dashboard" class="btn-tf-outline tf-print-hide" style="font-size:.8rem;">
+                    <i class="bi bi-grid-1x2 me-1"></i>Dashboard
+                </a>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="tf-table">
+                    <thead>
+                        <tr>
+                            <th>Approval Name</th>
+                            <th>Department</th>
+                            <th>Slug</th>
+                            <th>QR Status</th>
+                            <th style="text-align:right; width:120px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for approver in approvers %}
+                        <tr>
+                            <td style="font-weight:600;">{{ approver.approval_name }}</td>
+                            <td style="font-size:.85rem; color:var(--tf-muted);">{{ approver.department or "—" }}</td>
+                            <td><span class="tf-slug">{{ approver.slug }}</span></td>
+                            <td>
+                                {% if approver.qr_code_path %}
+                                    <span class="tf-badge ready">Ready</span>
+                                {% else %}
+                                    <span class="tf-badge info" style="opacity:.5">Not Generated</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="tf-action-group">
+                                    <a href="/generate-qr/{{ approver.slug }}" class="tf-action-btn" title="{% if approver.qr_code_path %}View QR{% else %}Generate QR{% endif %}">
+                                        <i class="bi bi-qr-code"></i>
+                                    </a>
+                                    <button type="button" class="tf-action-btn danger" onclick="openDeleteModal('{{ approver.slug }}', '{{ approver.approval_name }}', {{ doc_counts[approver.id] or 0 }})" title="Delete Approver">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="tf-empty">
+                                    <i class="bi bi-inbox"></i>
+                                    <div>No approvers created yet</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Approver Form -->
+    <div class="col-12">
+        <div class="tf-form-card">
+            <div class="tf-form-header">
+                <div class="tf-form-header-title"><i class="bi bi-person-plus me-2"></i>Create Approver</div>
+                <div class="tf-form-header-sub">Add new approval point with automatic slug & optional QR generation</div>
+            </div>
+            <div class="tf-form-body">
+                {% if success_message %}
+                <div class="tf-alert tf-alert-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>{{ success_message }}</span>
+                </div>
+                {% endif %}
+
+                {% if error_message %}
+                <div class="tf-alert tf-alert-error">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span>{{ error_message }}</span>
+                </div>
+                {% endif %}
+
+                <form method="post" action="/dashboard/approvers">
+                    <div class="tf-form-group">
+                        <label for="approval_name">Approval Name <span class="req">*</span></label>
+                        <input type="text" id="approval_name" name="approval_name"
+                               value="{{ form_data.approval_name if form_data else '' }}"
+                               placeholder="" required>
+                        <div class="tf-hint">Name of the approver / approval point</div>
+                    </div>
+
+                    <div class="tf-form-group">
+                        <label for="department">Department</label>
+                        <input type="text" id="department" name="department"
+                               value="{{ form_data.department if form_data else '' }}"
+                               placeholder="">
+                        <div class="tf-hint">Optional: Department or section</div>
+                    </div>
+
+                    <div class="tf-form-group">
+                        <label class="tf-checkbox">
+                            <input type="checkbox" value="1" name="generate_qr" id="generate_qr">
+                            <span class="tf-checkbox-label">Generate QR code immediately after creation</span>
+                        </label>
+                    </div>
+
+                    <div class="tf-form-actions">
+                        <button type="submit" class="btn-tf-primary">
+                            <i class="bi bi-check-circle me-2"></i>Create Approver
+                        </button>
+                        <a href="/dashboard" class="btn-tf-outline">
+                            <i class="bi bi-arrow-left me-1"></i>Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="tf-modal-backdrop" id="deleteModalBackdrop"></div>
+<div class="tf-modal" id="deleteModal">
+    <div class="tf-modal-header">
+        <div class="tf-modal-title">Delete Approver</div>
+        <button type="button" class="tf-modal-close" onclick="closeDeleteModal()">×</button>
+    </div>
+    <div class="tf-modal-body">
+        <p>Apakah Anda yakin ingin menghapus <strong id="approverNameDisplay"></strong>?</p>
+        
+        <div id="documentNotice" style="margin-top: 1rem; display: none;">
+            <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: var(--tf-radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; gap: 0.5rem; color: #b45309; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; align-items: center;">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>Terdapat Dokumen Terkait</span>
+                </div>
+                <p style="font-size: 0.8rem; color: #78350f; margin: 0; line-height: 1.4;">
+                    Approver ini memiliki <strong id="docCountDisplay"></strong> dokumen yang terhubung. Silakan pilih opsi penghapusan di bawah:
+                </p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <button type="button" class="btn-tf-outline" style="text-align: left; padding: 0.75rem 1rem; justify-content: flex-start; display: flex; flex-direction: column; align-items: flex-start; width: 100%; border-color: var(--tf-border); border-radius: var(--tf-radius-sm); cursor: pointer;" onclick="confirmDelete('approver_only')">
+                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--tf-text);">1. Hapus Approver Saja (Dokumen Tetap Ada)</span>
+                    <span style="font-size: 0.72rem; color: var(--tf-muted); margin-top: 0.15rem; font-weight: normal; line-height: 1.3;">Dokumen terkait tetap dipertahankan di sistem (approver diset menjadi kosong/NULL).</span>
+                </button>
+                
+                <button type="button" style="text-align: left; padding: 0.75rem 1rem; justify-content: flex-start; display: flex; flex-direction: column; align-items: flex-start; width: 100%; background: var(--tf-danger); color: #fff; border: none; border-radius: var(--tf-radius-sm); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#dc2626'" onmouseout="this.style.backgroundColor='var(--tf-danger)'" onclick="confirmDelete('with_documents')">
+                    <span style="font-weight: 600; font-size: 0.85rem;">2. Hapus Approver & Seluruh Dokumen Terkait</span>
+                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.9); margin-top: 0.15rem; font-weight: normal; line-height: 1.3;">Menghapus permanen approver beserta seluruh dokumen dan logs yang terhubung dengannya.</span>
+                </button>
+            </div>
+        </div>
+        
+        <p id="standardNotice" style="font-size: 0.85rem; color: var(--tf-muted); margin-top: 1rem;">Tindakan ini tidak dapat dibatalkan.</p>
+    </div>
+    <div class="tf-modal-footer" id="standardFooter" style="display: flex;">
+        <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Batal</button>
+        <button type="button" class="btn-delete" onclick="confirmDelete('approver_only')">Hapus</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    let currentApproverSlug = null;
+    let currentDocCount = 0;
+
+    window.openDeleteModal = function(slug, name, docCount) {
+        currentApproverSlug = slug;
+        currentDocCount = docCount || 0;
+        document.getElementById('approverNameDisplay').textContent = name;
+        
+        if (currentDocCount > 0) {
+            document.getElementById('docCountDisplay').textContent = currentDocCount;
+            document.getElementById('documentNotice').style.display = 'block';
+            document.getElementById('standardNotice').style.display = 'none';
+            document.getElementById('standardFooter').style.display = 'none';
+        } else {
+            document.getElementById('documentNotice').style.display = 'none';
+            document.getElementById('standardNotice').style.display = 'block';
+            document.getElementById('standardFooter').style.display = 'flex';
+        }
+        
+        document.getElementById('deleteModal').classList.add('show');
+        document.getElementById('deleteModalBackdrop').classList.add('show');
+    };
+
+    window.closeDeleteModal = function() {
+        currentApproverSlug = null;
+        currentDocCount = 0;
+        document.getElementById('deleteModal').classList.remove('show');
+        document.getElementById('deleteModalBackdrop').classList.remove('show');
+    };
+
+    window.confirmDelete = function(mode) {
+        if (currentApproverSlug) {
+            let deleteMode = mode || 'approver_only';
+            window.location.href = '/api/approvers/' + currentApproverSlug + '/delete?mode=' + deleteMode;
+        }
+    };
+
+    document.getElementById('deleteModalBackdrop').addEventListener('click', closeDeleteModal);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDeleteModal();
+        }
+    });
+})();
+</script>
+{% endblock %}
