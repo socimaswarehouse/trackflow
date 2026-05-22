@@ -10,5 +10,9 @@ load_dotenv(BASE_DIR / ".env")
 
 
 def get_base_url() -> str:
-    """Get the base URL for QR code generation and submission links."""
-    return os.getenv("BASE_URL", "http://127.0.0.1:8000")
+    base_url = os.getenv("BASE_URL")
+
+    if not base_url:
+        raise ValueError("BASE_URL is not set in environment variables")
+
+    return base_url
