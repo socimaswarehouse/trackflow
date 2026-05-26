@@ -367,30 +367,41 @@
         <div class="tf-page-header-copy">
             <h1 class="tf-page-title">QR Users</h1>
             <p class="tf-page-subtitle">QR permanent user untuk tahap input data dokumen, plus kontrol edit dan hapus operational tracking</p>
+            <div style="margin-top:1rem;">
+                <a href="/dashboard/users/generate-qr" class="btn-tf-primary">
+                    <i class="bi bi-qr-code me-1"></i>Generate QR
+                </a>
+            </div>
         </div>
         <div class="tf-page-header-side">
-            {% if users %}
-            {% set featured_user = users[0] %}
+            {% if generated_user %}
             <div class="tf-compact-qr-card">
                 <div class="tf-compact-qr-head">
-                    <div class="tf-compact-qr-title">{{ featured_user.full_name }}</div>
-                    <div class="tf-compact-qr-meta">{{ featured_user.department or "No department" }}</div>
+                    <div class="tf-compact-qr-title">{{ generated_user.full_name }}</div>
+                    <div class="tf-compact-qr-meta">{{ generated_user.department or "No department" }}</div>
                     <div class="tf-compact-qr-meta">QR permanent tahap 1</div>
                 </div>
                 <div class="tf-compact-qr-body">
                     <div class="tf-compact-qr-frame">
-                        <img src="{{ featured_user.qr_image_url }}" alt="QR user {{ featured_user.full_name }}">
+                        <img src="{{ generated_user.qr_image_url }}" alt="QR user {{ generated_user.full_name }}">
                     </div>
                     <div class="tf-compact-qr-actions">
-                        <a href="/generate-user-qr/{{ featured_user.id }}" class="tf-action-btn">
+                        <a href="/generate-user-qr/{{ generated_user.id }}" class="tf-action-btn">
                             <i class="bi bi-qr-code"></i>
                             <span>View</span>
                         </a>
-                        <a href="/submit/user/{{ featured_user.id }}" target="_blank" class="tf-action-btn">
+                        <a href="/submit/user/{{ generated_user.id }}" target="_blank" class="tf-action-btn">
                             <i class="bi bi-box-arrow-up-right"></i>
                             <span>Form</span>
                         </a>
                     </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="tf-compact-qr-card">
+                <div class="tf-compact-qr-head">
+                    <div class="tf-compact-qr-title">QR Belum Digenerate</div>
+                    <div class="tf-compact-qr-meta">Klik tombol Generate QR untuk menampilkan QR permanent user di sini.</div>
                 </div>
             </div>
             {% endif %}

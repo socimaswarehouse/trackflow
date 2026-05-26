@@ -17,7 +17,7 @@ from app.services.dashboard_service import get_dashboard_documents, get_dashboar
 from app.services.document_service import delete_document, update_document_details
 from app.services.statistics_service import get_approval_statistics, get_chart_data_for_approvers
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES
-from app.services.user_service import get_all_employee_users
+from app.services.user_service import get_all_employee_users, get_preferred_qr_user
 
 ALLOWED_DOCUMENT_TYPES = ("Invoice", "PAM")
 
@@ -164,11 +164,12 @@ def get_user_qr_management(
     date_from: str = Query(default=""),
     date_to: str = Query(default=""),
     document_type: str = Query(default=""),
+    qr_user_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """User QR management page."""
     users = get_all_employee_users(db)
-    _prepare_user_qr_cards(users)
+    generated_user = _prepare_generated_user_card(db, qr_user_id)
     documents = get_dashboard_documents(
         db,
         search=search or None,
@@ -186,6 +187,7 @@ def get_user_qr_management(
             "page_title": "QR Users",
             "active_menu": "users",
             "users": users,
+            "generated_user": generated_user,
             "documents": documents,
             "employee_count": len(users),
             "search_query": search,
@@ -199,6 +201,23 @@ def get_user_qr_management(
             "error_message": request.query_params.get("error"),
             **summary,
         },
+    )
+
+
+@router.get("/dashboard/users/generate-qr", tags=["Dashboard"])
+def generate_user_qr_from_dashboard(
+    db: Session = Depends(get_db),
+):
+    generated_user = get_preferred_qr_user(db)
+    if generated_user is None:
+        return RedirectResponse(
+            url="/dashboard/users?error=Belum ada user aktif untuk dibuatkan QR.",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        url=f"/dashboard/users?generated=1&qr_user_id={generated_user.id}",
+        status_code=303,
     )
 
 
@@ -390,13 +409,26 @@ def _build_approver_success_message(request: Request) -> str | None:
     return None
 
 
-def _prepare_user_qr_cards(users) -> None:
-    for user in users:
-        user.qr_image_url = f"/qr-image/user/{user.id}"
-        user.qr_target_url = f"/submit/user/{user.id}"
+def _prepare_generated_user_card(
+    db: Session,
+    qr_user_id: int | None,
+):
+    if qr_user_id is None:
+        return None
+
+    user = get_preferred_qr_user(db, qr_user_id)
+    if user is None:
+        return None
+
+    user.qr_image_url = f"/qr-image/user/{user.id}"
+    user.qr_target_url = f"/submit/user/{user.id}"
+    return user
 
 
 def _build_user_qr_success_message(request: Request) -> str | None:
+    if request.query_params.get("generated") == "1":
+        return "QR user berhasil digenerate dan ditampilkan di halaman ini."
+
     if request.query_params.get("updated") == "1":
         document_number = request.query_params.get("doc")
         if document_number:
