@@ -7,7 +7,6 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.config import get_base_url
 from app.services.approver_service import (
     create_approver,
     delete_approver,
@@ -19,7 +18,6 @@ from app.services.document_service import delete_document, update_document_detai
 from app.services.statistics_service import get_approval_statistics, get_chart_data_for_approvers
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES
 from app.services.user_service import get_all_employee_users
-from app.utils.qr_generator import generate_qr_code
 
 ALLOWED_DOCUMENT_TYPES = ("Invoice", "PAM")
 
@@ -393,20 +391,9 @@ def _build_approver_success_message(request: Request) -> str | None:
 
 
 def _prepare_user_qr_cards(users) -> None:
-    base_url = get_base_url()
-    qr_directory = Path(__file__).resolve().parents[1] / "static" / "qrcodes"
-
     for user in users:
-        qr_slug = f"user-{user.id}"
-        target_url = f"{base_url}/submit/user/{user.id}"
-        expected_relative_path = (Path("static") / "qrcodes" / f"{qr_slug}.png").as_posix()
-        expected_absolute_path = qr_directory / f"{qr_slug}.png"
-
-        if not expected_absolute_path.exists():
-            generate_qr_code(qr_slug, target_url)
-
-        user.qr_image_url = f"/{expected_relative_path}"
-        user.qr_target_url = target_url
+        user.qr_image_url = f"/qr-image/user/{user.id}"
+        user.qr_target_url = f"/submit/user/{user.id}"
 
 
 def _build_user_qr_success_message(request: Request) -> str | None:

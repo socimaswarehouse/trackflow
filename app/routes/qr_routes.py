@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -13,7 +14,7 @@ from app.services.approver_service import (
     update_approver_qr_path,
 )
 from app.services.user_service import get_user_by_id
-from app.utils.qr_generator import generate_qr_code
+from app.utils.qr_generator import generate_qr_code, generate_qr_png_bytes
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -49,6 +50,7 @@ def generate_approver_qr(
             "entity_subtitle": approver.department,
             "entity_label": "Approver",
             "qr_status": qr_status,
+            "qr_image_src": f"/qr-image/approver/{approver.slug}",
             "qr_image_url": f"/{qr_path}",
             "target_url": f"{base_url}/submit/{approver.slug}",
             "open_page_url": f"/submit/{approver.slug}",
@@ -81,6 +83,7 @@ def generate_user_qr(
             "entity_subtitle": user.department,
             "entity_label": "User",
             "qr_status": "QR Ready",
+            "qr_image_src": f"/qr-image/user/{user.id}",
             "qr_image_url": f"/{qr_path}",
             "target_url": target_url,
             "open_page_url": f"/submit/user/{user.id}",
@@ -96,3 +99,35 @@ def _is_existing_qr_available(qr_path: str | None) -> bool:
 
     absolute_path = Path(__file__).resolve().parents[1] / qr_path
     return absolute_path.exists()
+
+
+@router.get("/qr-image/approver/{slug}", tags=["QR"])
+def get_approver_qr_image(
+    slug: str,
+    db: Session = Depends(get_db),
+):
+    approver = get_approver_by_slug(db, slug)
+    if approver is None:
+        raise HTTPException(status_code=404, detail="Approver not found")
+
+    target_url = f"{get_base_url()}/submit/{approver.slug}"
+    return Response(
+        content=generate_qr_png_bytes(target_url),
+        media_type="image/png",
+    )
+
+
+@router.get("/qr-image/user/{user_id}", tags=["QR"])
+def get_user_qr_image(
+    user_id: int,
+    db: Session = Depends(get_db),
+):
+    user = get_user_by_id(db, user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target_url = f"{get_base_url()}/submit/user/{user.id}"
+    return Response(
+        content=generate_qr_png_bytes(target_url),
+        media_type="image/png",
+    )

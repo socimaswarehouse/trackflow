@@ -35,7 +35,7 @@
 
                         <div class="border rounded-4 bg-white p-4 mb-4">
                             <img
-                                src="{{ qr_image_url }}"
+                                src="{{ qr_image_src or qr_image_url }}"
                                 alt="QR code for {{ entity_name }}"
                                 class="img-fluid"
                                 style="max-width: 320px;"
@@ -46,7 +46,7 @@
                         <div class="small text-break mb-4">{{ target_url }}</div>
 
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="{{ qr_image_url }}" target="_blank" class="btn btn-outline-primary">Open QR Image</a>
+                            <a href="{{ qr_image_src or qr_image_url }}" target="_blank" class="btn btn-outline-primary">Open QR Image</a>
                             <a href="{{ open_page_url }}" target="_blank" class="btn btn-primary">{{ open_page_label }}</a>
                         </div>
                     </div>
