@@ -490,6 +490,64 @@
         .tf-filter-group { min-width: 100%; }
         .tf-modal-grid { grid-template-columns: 1fr; }
     }
+
+    /* Mockup Form Styling */
+    .tf-form-label-mockup {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .tf-section-title-mockup {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 1rem;
+        margin-top: 0.5rem;
+    }
+    .tf-form-control-mockup {
+        font-size: 0.9rem !important;
+        border-radius: 10px !important;
+        border: 1.5px solid #cbd5e1 !important;
+        padding: 0.75rem 0.85rem !important;
+        background-color: #fafcff !important;
+        color: #1e293b !important;
+        min-height: auto !important;
+        transition: border-color var(--tf-transition), box-shadow var(--tf-transition) !important;
+    }
+    .tf-form-control-mockup:focus {
+        border-color: var(--tf-accent) !important;
+        box-shadow: 0 0 0 3px rgba(14,165,233,.12) !important;
+        background-color: #ffffff !important;
+    }
+    .tf-submit-btn-mockup {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        width: 100%;
+        padding: 0.85rem 1rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: var(--tf-primary);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all var(--tf-transition);
+    }
+    .tf-submit-btn-mockup:hover {
+        background: var(--tf-primary-mid);
+        box-shadow: 0 4px 12px rgba(10,46,92,.2);
+    }
+    .tf-submit-btn-mockup:active {
+        transform: scale(0.99);
+    }
 </style>
 {% endblock %}
 
@@ -643,6 +701,71 @@
         <div class="tf-metric-desc">Dokumen yang sudah masuk workflow</div>
     </div>
 </section>
+
+<!-- Document Tracking Form Panel -->
+<div class="tf-panel mb-4">
+    <div class="tf-panel-header border-bottom py-3 px-4 d-flex align-items-center" style="background: #ffffff; border-bottom: 1px solid var(--tf-border) !important;">
+        <i class="bi bi-plus-circle-fill text-primary me-2 fs-5" style="color: var(--tf-primary) !important;"></i>
+        <h2 class="h5 m-0 fw-bold" style="color: var(--tf-primary); font-size: 1.05rem;">Document Tracking</h2>
+    </div>
+    <div class="tf-panel-body" style="padding: 1.75rem;">
+        <form method="post" action="/dashboard/users/documents/add" class="needs-validation" novalidate>
+            <!-- DOCUMENT INFO section -->
+            <div class="tf-section-title-mockup">DOCUMENT INFO</div>
+            
+            <div class="row g-3 mb-4">
+                <!-- DOC TYPE field -->
+                <div class="col-12 col-md-4">
+                    <label class="tf-form-label-mockup" for="document_type">DOC TYPE</label>
+                    <select class="tf-form-control-mockup form-select" id="document_type" name="document_type" required>
+                        {% for dt in allowed_document_types %}
+                        <option value="{{ dt }}">{{ dt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- INVOICE field -->
+                <div class="col-12 col-md-4">
+                    <label class="tf-form-label-mockup" for="invoice_number">INVOICE</label>
+                    <input type="text" class="tf-form-control-mockup form-control" id="invoice_number" name="invoice_number" placeholder="e.g. 5777" required autocomplete="off">
+                </div>
+                <!-- QTY / PRICE field -->
+                <div class="col-12 col-md-4">
+                    <label class="tf-form-label-mockup" for="qty_price">QTY / PRICE</label>
+                    <input type="text" class="tf-form-control-mockup form-control" id="qty_price" name="qty_price" placeholder="e.g. 12 x Rp 250.000" required autocomplete="off">
+                </div>
+            </div>
+
+            <!-- STATUS section -->
+            <div class="tf-section-title-mockup">STATUS</div>
+
+            <div class="row g-3 mb-4">
+                <!-- STATUS field -->
+                <div class="col-12 col-md-4">
+                    <label class="tf-form-label-mockup" for="status">STATUS</label>
+                    <select class="tf-form-control-mockup form-select" id="status" name="status" required>
+                        {% for st in allowed_statuses %}
+                        <option value="{{ st }}">{{ st }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- REMARKS field -->
+                <div class="col-12 col-md-8">
+                    <label class="tf-form-label-mockup" for="notes">REMARKS</label>
+                    <textarea class="tf-form-control-mockup form-control" id="notes" name="notes" placeholder="Optional: add notes or remarks" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <button type="submit" class="tf-submit-btn-mockup">
+                        <i class="bi bi-send-fill"></i>
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
 <div class="tf-panel">
     <div class="tf-panel-header">
@@ -942,6 +1065,18 @@
             closeDeleteModal();
         }
     });
+
+    // Client-side validation for Document Tracking form
+    const addForm = document.querySelector('.needs-validation');
+    if (addForm) {
+        addForm.addEventListener('submit', function(event) {
+            if (!addForm.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            addForm.classList.add('was-validated');
+        }, false);
+    }
 })();
 </script>
 {% endblock %}

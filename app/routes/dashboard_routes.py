@@ -14,10 +14,16 @@ from app.services.approver_service import (
     get_document_count_for_approver,
 )
 from app.services.dashboard_service import get_dashboard_documents, get_dashboard_summary
-from app.services.document_service import delete_document, update_document_details
+from app.services.document_service import (
+    create_document,
+    delete_document,
+    update_document_details,
+    _get_default_submitter_id,
+)
 from app.services.statistics_service import get_approval_statistics, get_chart_data_for_approvers
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES
 from app.services.user_service import get_all_employee_users, get_preferred_qr_user
+from app.schemas.document_schema import DocumentSubmissionSchema
 
 ALLOWED_DOCUMENT_TYPES = ("Invoice", "PAM")
 
@@ -217,6 +223,73 @@ def generate_user_qr_from_dashboard(
 
     return RedirectResponse(
         url=f"/dashboard/users?generated=1&qr_user_id={generated_user.id}",
+        status_code=303,
+    )
+
+
+@router.post("/dashboard/users/documents/add", tags=["Dashboard"])
+def post_add_user_document(
+    document_type: str = Form(...),
+    invoice_number: str = Form(...),
+    qty_price: str = Form(...),
+    status: str = Form(...),
+    notes: str = Form(default=""),
+    db: Session = Depends(get_db),
+):
+    cleaned_document_type = document_type.strip()
+    cleaned_invoice_number = invoice_number.strip()
+    cleaned_qty_price = qty_price.strip()
+    cleaned_status = status.strip()
+    cleaned_notes = notes.strip()
+
+    if cleaned_document_type not in ALLOWED_DOCUMENT_TYPES:
+        return RedirectResponse(
+            url="/dashboard/users?error=Document type must be Invoice or PAM.",
+            status_code=303,
+        )
+
+    if cleaned_status not in ALLOWED_DOCUMENT_STATUSES:
+        return RedirectResponse(
+            url="/dashboard/users?error=Status must be Pending, Approved, or Rejected.",
+            status_code=303,
+        )
+
+    if not cleaned_invoice_number or not cleaned_qty_price:
+        return RedirectResponse(
+            url="/dashboard/users?error=Invoice number and qty/price are required.",
+            status_code=303,
+        )
+
+    try:
+        submitter_id = _get_default_submitter_id(db)
+    except ValueError as exc:
+        return RedirectResponse(
+            url=f"/dashboard/users?error={str(exc)}",
+            status_code=303,
+        )
+
+    document_data = DocumentSubmissionSchema(
+        document_type=cleaned_document_type,
+        invoice_number=cleaned_invoice_number,
+        qty_price=cleaned_qty_price,
+        status=cleaned_status,
+        notes=cleaned_notes or None,
+    )
+
+    try:
+        document = create_document(
+            db=db,
+            submitter_id=submitter_id,
+            document_data=document_data,
+        )
+    except ValueError as exc:
+        return RedirectResponse(
+            url=f"/dashboard/users?error={str(exc)}",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        url=f"/dashboard/users?added=1&doc={document.doc_number}",
         status_code=303,
     )
 
@@ -428,6 +501,12 @@ def _prepare_generated_user_card(
 def _build_user_qr_success_message(request: Request) -> str | None:
     if request.query_params.get("generated") == "1":
         return "QR user berhasil digenerate dan ditampilkan di halaman ini."
+
+    if request.query_params.get("added") == "1":
+        document_number = request.query_params.get("doc")
+        if document_number:
+            return f"Dokumen berhasil ditambahkan. Reference: {document_number}"
+        return "Dokumen berhasil ditambahkan."
 
     if request.query_params.get("updated") == "1":
         document_number = request.query_params.get("doc")
