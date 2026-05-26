@@ -1,0 +1,162 @@
+{% extends "dashboard/layout.html" %}
+
+{% block extra_css %}
+<style>
+    .tf-user-role {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: var(--tf-primary-mid);
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .tf-user-role::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--tf-accent);
+    }
+
+    .tf-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        border-radius: var(--tf-radius-sm);
+        border: 1.5px solid var(--tf-border);
+        background: transparent;
+        color: var(--tf-primary-mid);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all var(--tf-transition);
+        text-decoration: none;
+        padding: 0 0.65rem;
+        gap: 0.4rem;
+    }
+
+    .tf-action-btn:hover {
+        background: var(--tf-primary-light);
+        border-color: var(--tf-primary-mid);
+        color: var(--tf-primary);
+    }
+
+    .tf-action-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .tf-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--tf-muted);
+    }
+
+    .tf-empty i {
+        font-size: 2.5rem;
+        opacity: 0.3;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tf-page-header">
+    <h1 class="tf-page-title">QR Users</h1>
+    <p class="tf-page-subtitle">Generate dan buka QR user/karyawan untuk tahap input data dokumen</p>
+</div>
+
+<section class="tf-metrics">
+    <div class="tf-metric-card primary">
+        <div class="tf-metric-header">
+            <div class="tf-metric-icon primary"><i class="bi bi-people"></i></div>
+            <span class="tf-metric-label">Users</span>
+        </div>
+        <div class="tf-metric-value">{{ employee_count }}</div>
+        <div class="tf-metric-desc">User/karyawan aktif non-approver</div>
+    </div>
+    <div class="tf-metric-card accent">
+        <div class="tf-metric-header">
+            <div class="tf-metric-icon accent"><i class="bi bi-qr-code"></i></div>
+            <span class="tf-metric-label">QR Access</span>
+        </div>
+        <div class="tf-metric-value">{{ employee_count }}</div>
+        <div class="tf-metric-desc">Setiap user bisa generate QR masing-masing</div>
+    </div>
+    <div class="tf-metric-card success">
+        <div class="tf-metric-header">
+            <div class="tf-metric-icon success"><i class="bi bi-file-earmark-check"></i></div>
+            <span class="tf-metric-label">Tracked Docs</span>
+        </div>
+        <div class="tf-metric-value">{{ document_count }}</div>
+        <div class="tf-metric-desc">Dokumen yang sudah masuk workflow</div>
+    </div>
+</section>
+
+<div class="tf-panel">
+    <div class="tf-panel-header">
+        <div>
+            <div class="tf-panel-title"><i class="bi bi-person-vcard me-2"></i>User QR List</div>
+            <div class="tf-panel-subtitle">QR user dipakai untuk tahap 1 pengisian data dokumen</div>
+        </div>
+        <a href="/dashboard" class="btn-tf-outline tf-print-hide" style="font-size:.8rem;">
+            <i class="bi bi-grid-1x2 me-1"></i>Dashboard
+        </a>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="tf-table">
+            <thead>
+                <tr>
+                    <th>User Name</th>
+                    <th>Department</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th style="text-align:right; width:220px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td style="font-weight:600;">{{ user.full_name }}</td>
+                    <td style="font-size:.85rem; color:var(--tf-muted);">{{ user.department or "—" }}</td>
+                    <td><span class="tf-user-role">{{ user.role }}</span></td>
+                    <td style="font-size:.82rem; color:var(--tf-muted);">{{ user.email }}</td>
+                    <td>
+                        <div class="tf-action-group">
+                            <a href="/generate-user-qr/{{ user.id }}" class="tf-action-btn" title="Generate atau view QR user">
+                                <i class="bi bi-qr-code"></i>
+                                <span>Generate / View QR</span>
+                            </a>
+                            <a href="/submit/user/{{ user.id }}" class="tf-action-btn" title="Buka form tahap 1 user">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                <span>Open Form</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">
+                        <div class="tf-empty">
+                            <i class="bi bi-person-x"></i>
+                            <div>Belum ada user/karyawan aktif non-approver yang bisa dibuatkan QR.</div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

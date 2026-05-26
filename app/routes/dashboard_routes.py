@@ -17,6 +17,7 @@ from app.services.approver_service import (
 from app.services.dashboard_service import get_dashboard_documents, get_dashboard_summary
 from app.services.statistics_service import get_approval_statistics, get_chart_data_for_approvers
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES
+from app.services.user_service import get_all_employee_users
 
 ALLOWED_DOCUMENT_TYPES = ("Invoice", "PAM")
 
@@ -150,6 +151,28 @@ def get_approver_management(
             },
             "error_message": request.query_params.get("error"),
             "success_message": _build_approver_success_message(request),
+            **summary,
+        },
+    )
+
+
+@router.get("/dashboard/users", tags=["Dashboard"])
+def get_user_qr_management(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """User QR management page."""
+    users = get_all_employee_users(db)
+    summary = get_dashboard_summary(db)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard/user_qr_management.html",
+        context={
+            "page_title": "QR Users",
+            "active_menu": "users",
+            "users": users,
+            "employee_count": len(users),
             **summary,
         },
     )
