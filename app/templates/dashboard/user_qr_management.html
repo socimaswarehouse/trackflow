@@ -292,6 +292,8 @@
         max-width: 520px;
         width: min(92vw, 520px);
         border: 1px solid var(--tf-border);
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     .tf-modal.show {
@@ -304,6 +306,10 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        position: sticky;
+        top: 0;
+        background: var(--tf-surface);
+        z-index: 10;
     }
 
     .tf-modal-title {
@@ -330,6 +336,10 @@
         display: flex;
         gap: 0.75rem;
         justify-content: flex-end;
+        position: sticky;
+        bottom: 0;
+        background: var(--tf-surface);
+        z-index: 10;
     }
 
     .tf-modal-grid {
@@ -346,6 +356,66 @@
 
     .tf-form-group.full {
         grid-column: 1 / -1;
+    }
+
+    .tf-modal-section-title {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--tf-muted);
+        margin: 0.9rem 0 0.7rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--tf-border);
+    }
+
+    .tf-form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--tf-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.4rem;
+    }
+
+    .tf-form-input,
+    .tf-form-select {
+        font-family: inherit;
+        font-size: 0.875rem;
+        padding: 0.6rem 0.85rem;
+        border: 1.5px solid var(--tf-border);
+        border-radius: var(--tf-radius-sm);
+        color: var(--tf-text);
+        background: #fff;
+        transition: border-color var(--tf-transition), box-shadow var(--tf-transition);
+        width: 100%;
+    }
+
+    .tf-form-input:focus,
+    .tf-form-select:focus {
+        outline: none;
+        border-color: var(--tf-accent);
+        box-shadow: 0 0 0 3px rgba(14,165,233,.12);
+    }
+
+    .tf-form-textarea {
+        font-family: inherit;
+        font-size: 0.875rem;
+        padding: 0.6rem 0.85rem;
+        border: 1.5px solid var(--tf-border);
+        border-radius: var(--tf-radius-sm);
+        color: var(--tf-text);
+        background: #fff;
+        transition: border-color var(--tf-transition), box-shadow var(--tf-transition);
+        width: 100%;
+        min-height: 5rem;
+        resize: vertical;
+    }
+
+    .tf-form-textarea:focus {
+        outline: none;
+        border-color: var(--tf-accent);
+        box-shadow: 0 0 0 3px rgba(14,165,233,.12);
     }
 
     @media (max-width: 767px) {
@@ -394,6 +464,10 @@
                             <i class="bi bi-box-arrow-up-right"></i>
                             <span>Form</span>
                         </a>
+                        <button type="button" class="tf-action-btn" id="openSubmissionFormBtn">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Add</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -602,6 +676,62 @@
     </div>
 </div>
 
+<!-- Submission Form Modal -->
+<div class="tf-modal-backdrop" id="submissionModalBackdrop"></div>
+<div class="tf-modal" id="submissionModal">
+    <div class="tf-modal-header">
+        <div class="tf-modal-title">Document Tracking Update</div>
+        <button type="button" class="tf-modal-close" id="submissionModalCloseBtn">&times;</button>
+    </div>
+    <form method="post" id="submissionForm" action="/dashboard/users/document/add">
+        <div class="tf-modal-body">
+            <div class="tf-modal-section-title">Document Information</div>
+            
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="modal_document_type">Document Type</label>
+                <select class="tf-form-select" id="modal_document_type" name="document_type" required>
+                    <option value=""></option>
+                    {% for dt in allowed_document_types %}
+                    <option value="{{ dt }}">{{ dt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="modal_invoice_number">Invoice Number</label>
+                <input class="tf-form-input" id="modal_invoice_number" name="invoice_number" required>
+            </div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="modal_qty_price">Qty / Price</label>
+                <input class="tf-form-input" id="modal_qty_price" name="qty_price" required>
+            </div>
+
+            <div class="tf-modal-section-title">Approval Status</div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="modal_status">Status</label>
+                <select class="tf-form-select" id="modal_status" name="status" required>
+                    <option value=""></option>
+                    {% for st in allowed_statuses %}
+                    <option value="{{ st }}">{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="modal_notes">Remarks</label>
+                <textarea class="tf-form-textarea" id="modal_notes" name="notes"></textarea>
+            </div>
+        </div>
+        <div class="tf-modal-footer">
+            <button type="button" class="btn-tf-outline" id="submissionModalCancelBtn">Batal</button>
+            <button type="submit" class="btn-tf-primary">Simpan</button>
+        </div>
+    </form>
+</div>
+
+<!-- Edit Modal -->
 <div class="tf-modal-backdrop" id="editModalBackdrop"></div>
 <div class="tf-modal" id="editModal">
     <div class="tf-modal-header">
@@ -610,35 +740,41 @@
     </div>
     <form method="post" id="editDocumentForm">
         <div class="tf-modal-body">
-            <div class="tf-modal-grid">
-                <div class="tf-form-group">
-                    <label class="tf-label" for="edit_document_type">Document Type</label>
-                    <select class="tf-select" id="edit_document_type" name="document_type" required>
-                        {% for dt in allowed_document_types %}
-                        <option value="{{ dt }}">{{ dt }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="tf-form-group">
-                    <label class="tf-label" for="edit_status">Status</label>
-                    <select class="tf-select" id="edit_status" name="status" required>
-                        {% for st in allowed_statuses %}
-                        <option value="{{ st }}">{{ st }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="tf-form-group">
-                    <label class="tf-label" for="edit_invoice_number">Invoice Number</label>
-                    <input class="tf-input" id="edit_invoice_number" name="invoice_number" required>
-                </div>
-                <div class="tf-form-group">
-                    <label class="tf-label" for="edit_qty_price">Qty / Price</label>
-                    <input class="tf-input" id="edit_qty_price" name="qty_price" required>
-                </div>
-                <div class="tf-form-group full">
-                    <label class="tf-label" for="edit_notes">Remarks</label>
-                    <textarea class="tf-input" id="edit_notes" name="notes" rows="4"></textarea>
-                </div>
+            <div class="tf-modal-section-title">Document Information</div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="edit_document_type">Document Type</label>
+                <select class="tf-form-select" id="edit_document_type" name="document_type" required>
+                    {% for dt in allowed_document_types %}
+                    <option value="{{ dt }}">{{ dt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="edit_invoice_number">Invoice Number</label>
+                <input class="tf-form-input" id="edit_invoice_number" name="invoice_number" required>
+            </div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="edit_qty_price">Qty / Price</label>
+                <input class="tf-form-input" id="edit_qty_price" name="qty_price" required>
+            </div>
+
+            <div class="tf-modal-section-title">Approval Status</div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="edit_status">Status</label>
+                <select class="tf-form-select" id="edit_status" name="status" required>
+                    {% for st in allowed_statuses %}
+                    <option value="{{ st }}">{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="tf-form-group">
+                <label class="tf-form-label" for="edit_notes">Remarks</label>
+                <textarea class="tf-form-textarea" id="edit_notes" name="notes"></textarea>
             </div>
         </div>
         <div class="tf-modal-footer">
@@ -648,6 +784,7 @@
     </form>
 </div>
 
+<!-- Delete Modal -->
 <div class="tf-modal-backdrop" id="deleteModalBackdrop"></div>
 <div class="tf-modal" id="deleteModal" style="max-width:420px;">
     <div class="tf-modal-header">
@@ -671,12 +808,25 @@
 <script>
 (function() {
     let deleteDocumentId = null;
+    const submissionModal = document.getElementById('submissionModal');
+    const submissionBackdrop = document.getElementById('submissionModalBackdrop');
     const editModal = document.getElementById('editModal');
     const editBackdrop = document.getElementById('editModalBackdrop');
     const deleteModal = document.getElementById('deleteModal');
     const deleteBackdrop = document.getElementById('deleteModalBackdrop');
+    const openSubmissionBtn = document.getElementById('openSubmissionFormBtn');
     const editButtons = document.querySelectorAll('.js-edit-document');
     const deleteButtons = document.querySelectorAll('.js-delete-document');
+
+    function openSubmissionModal() {
+        submissionModal.classList.add('show');
+        submissionBackdrop.classList.add('show');
+    }
+
+    function closeSubmissionModal() {
+        submissionModal.classList.remove('show');
+        submissionBackdrop.classList.remove('show');
+    }
 
     function openEditModal(id, documentType, invoiceNumber, qtyPrice, status, notes) {
         document.getElementById('editDocumentForm').action = '/dashboard/users/documents/' + id + '/edit';
@@ -713,6 +863,14 @@
         }
     }
 
+    if (openSubmissionBtn) {
+        openSubmissionBtn.addEventListener('click', openSubmissionModal);
+    }
+
+    document.getElementById('submissionModalCloseBtn').addEventListener('click', closeSubmissionModal);
+    document.getElementById('submissionModalCancelBtn').addEventListener('click', closeSubmissionModal);
+    submissionBackdrop.addEventListener('click', closeSubmissionModal);
+
     editButtons.forEach(function(button) {
         button.addEventListener('click', function() {
             openEditModal(
@@ -744,6 +902,7 @@
     deleteBackdrop.addEventListener('click', closeDeleteModal);
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
+            closeSubmissionModal();
             closeEditModal();
             closeDeleteModal();
         }
