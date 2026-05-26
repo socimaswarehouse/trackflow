@@ -1,5 +1,4 @@
 """Dashboard and approver management routes."""
-
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Query, Request
@@ -8,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.config import get_base_url
 from app.services.approver_service import (
     create_approver,
     delete_approver,
@@ -15,9 +15,11 @@ from app.services.approver_service import (
     get_document_count_for_approver,
 )
 from app.services.dashboard_service import get_dashboard_documents, get_dashboard_summary
+from app.services.document_service import delete_document, update_document_details
 from app.services.statistics_service import get_approval_statistics, get_chart_data_for_approvers
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES
 from app.services.user_service import get_all_employee_users
+from app.utils.qr_generator import generate_qr_code
 
 ALLOWED_DOCUMENT_TYPES = ("Invoice", "PAM")
 
@@ -159,10 +161,24 @@ def get_approver_management(
 @router.get("/dashboard/users", tags=["Dashboard"])
 def get_user_qr_management(
     request: Request,
+    search: str = Query(default=""),
+    status: str = Query(default=""),
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    document_type: str = Query(default=""),
     db: Session = Depends(get_db),
 ):
     """User QR management page."""
     users = get_all_employee_users(db)
+    _prepare_user_qr_cards(users)
+    documents = get_dashboard_documents(
+        db,
+        search=search or None,
+        status=status or None,
+        date_from=date_from or None,
+        date_to=date_to or None,
+        document_type=document_type or None,
+    )
     summary = get_dashboard_summary(db)
 
     return templates.TemplateResponse(
@@ -172,9 +188,99 @@ def get_user_qr_management(
             "page_title": "QR Users",
             "active_menu": "users",
             "users": users,
+            "documents": documents,
             "employee_count": len(users),
+            "search_query": search,
+            "selected_status": status,
+            "selected_date_from": date_from,
+            "selected_date_to": date_to,
+            "selected_document_type": document_type,
+            "allowed_statuses": ALLOWED_DOCUMENT_STATUSES,
+            "allowed_document_types": ALLOWED_DOCUMENT_TYPES,
+            "success_message": _build_user_qr_success_message(request),
+            "error_message": request.query_params.get("error"),
             **summary,
         },
+    )
+
+
+@router.post("/dashboard/users/documents/{document_id}/edit", tags=["Dashboard"])
+def post_update_user_qr_document(
+    document_id: int,
+    document_type: str = Form(...),
+    invoice_number: str = Form(...),
+    qty_price: str = Form(...),
+    status: str = Form(...),
+    notes: str = Form(default=""),
+    db: Session = Depends(get_db),
+):
+    cleaned_document_type = document_type.strip()
+    cleaned_invoice_number = invoice_number.strip()
+    cleaned_qty_price = qty_price.strip()
+    cleaned_status = status.strip()
+    cleaned_notes = notes.strip()
+
+    if cleaned_document_type not in ALLOWED_DOCUMENT_TYPES:
+        return RedirectResponse(
+            url="/dashboard/users?error=Document type must be Invoice or PAM.",
+            status_code=303,
+        )
+
+    if cleaned_status not in ALLOWED_DOCUMENT_STATUSES:
+        return RedirectResponse(
+            url="/dashboard/users?error=Status must be Pending, Approved, or Rejected.",
+            status_code=303,
+        )
+
+    if not cleaned_invoice_number or not cleaned_qty_price:
+        return RedirectResponse(
+            url="/dashboard/users?error=Invoice number and qty/price are required.",
+            status_code=303,
+        )
+
+    try:
+        updated_document = update_document_details(
+            db=db,
+            document_id=document_id,
+            document_type=cleaned_document_type,
+            invoice_number=cleaned_invoice_number,
+            qty_price=cleaned_qty_price,
+            status=cleaned_status,
+            notes=cleaned_notes or None,
+        )
+    except ValueError as exc:
+        return RedirectResponse(
+            url=f"/dashboard/users?error={str(exc)}",
+            status_code=303,
+        )
+
+    if updated_document is None:
+        return RedirectResponse(
+            url="/dashboard/users?error=Document not found.",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        url=f"/dashboard/users?updated=1&doc={updated_document.doc_number}",
+        status_code=303,
+    )
+
+
+@router.get("/dashboard/users/documents/{document_id}/delete", tags=["Dashboard"])
+def delete_user_qr_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    deleted = delete_document(db, document_id)
+    if not deleted:
+        return RedirectResponse(
+            url="/dashboard/users?error=Document not found.",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        url="/dashboard/users?deleted=1",
+        status_code=303,
     )
 
 
@@ -282,5 +388,35 @@ def _build_approver_success_message(request: Request) -> str | None:
 
     if request.query_params.get("deleted") == "1":
         return "Approver deleted successfully."
+
+    return None
+
+
+def _prepare_user_qr_cards(users) -> None:
+    base_url = get_base_url()
+    qr_directory = Path(__file__).resolve().parents[1] / "static" / "qrcodes"
+
+    for user in users:
+        qr_slug = f"user-{user.id}"
+        target_url = f"{base_url}/submit/user/{user.id}"
+        expected_relative_path = (Path("static") / "qrcodes" / f"{qr_slug}.png").as_posix()
+        expected_absolute_path = qr_directory / f"{qr_slug}.png"
+
+        if not expected_absolute_path.exists():
+            generate_qr_code(qr_slug, target_url)
+
+        user.qr_image_url = f"/{expected_relative_path}"
+        user.qr_target_url = target_url
+
+
+def _build_user_qr_success_message(request: Request) -> str | None:
+    if request.query_params.get("updated") == "1":
+        document_number = request.query_params.get("doc")
+        if document_number:
+            return f"Document {document_number} berhasil diupdate."
+        return "Document berhasil diupdate."
+
+    if request.query_params.get("deleted") == "1":
+        return "Document berhasil dihapus dari operational tracking table."
 
     return None

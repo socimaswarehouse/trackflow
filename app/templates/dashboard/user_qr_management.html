@@ -1,19 +1,67 @@
 {% extends "dashboard/layout.html" %}
 
+{% macro status_badge(status) -%}
+    {% if status == "Pending" %}
+        <span class="tf-badge pending">{{ status }}</span>
+    {% elif status == "Approved" %}
+        <span class="tf-badge approved">{{ status }}</span>
+    {% elif status == "Rejected" %}
+        <span class="tf-badge rejected">{{ status }}</span>
+    {% else %}
+        <span class="tf-badge info">{{ status }}</span>
+    {% endif %}
+{%- endmacro %}
+
 {% block extra_css %}
 <style>
+    .tf-user-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .tf-user-qr-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid var(--tf-border);
+        border-radius: var(--tf-radius);
+        box-shadow: var(--tf-shadow);
+        overflow: hidden;
+    }
+
+    .tf-user-qr-head {
+        padding: 1rem 1rem 0.75rem;
+        border-bottom: 1px solid #eef3f8;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .tf-user-qr-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--tf-primary);
+    }
+
+    .tf-user-qr-meta {
+        font-size: 0.78rem;
+        color: var(--tf-muted);
+        margin-top: 0.15rem;
+    }
+
     .tf-user-role {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.2rem 0.6rem;
+        padding: 0.25rem 0.65rem;
         border-radius: 999px;
-        background: #f1f5f9;
+        background: #eaf4ff;
         color: var(--tf-primary-mid);
         font-size: 0.72rem;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
+        white-space: nowrap;
     }
 
     .tf-user-role::before {
@@ -22,6 +70,35 @@
         height: 6px;
         border-radius: 50%;
         background: var(--tf-accent);
+    }
+
+    .tf-user-qr-body {
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .tf-user-qr-frame {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 0.9rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .tf-user-qr-frame img {
+        width: 100%;
+        max-width: 180px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .tf-user-qr-link {
+        font-size: 0.75rem;
+        color: var(--tf-muted);
+        word-break: break-all;
+        line-height: 1.4;
+        margin-bottom: 0.9rem;
     }
 
     .tf-action-btn {
@@ -48,12 +125,61 @@
         color: var(--tf-primary);
     }
 
+    .tf-action-btn.danger:hover {
+        background: var(--tf-danger-bg);
+        border-color: var(--tf-danger);
+        color: var(--tf-danger);
+    }
+
     .tf-action-group {
         display: flex;
         gap: 0.5rem;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: center;
         flex-wrap: wrap;
+    }
+
+    .tf-alert {
+        padding: 0.85rem 1.15rem;
+        border-radius: var(--tf-radius-sm);
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .tf-alert-success {
+        background: var(--tf-success-bg);
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .tf-alert-error {
+        background: var(--tf-danger-bg);
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .tf-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: flex-end;
+    }
+
+    .tf-filter-group {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .tf-filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
     }
 
     .tf-empty {
@@ -68,14 +194,114 @@
         margin-bottom: 0.75rem;
         display: block;
     }
+
+    .tf-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.5);
+        z-index: 1050;
+    }
+
+    .tf-modal-backdrop.show {
+        display: block;
+    }
+
+    .tf-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--tf-surface);
+        border-radius: var(--tf-radius);
+        box-shadow: var(--tf-shadow-lg);
+        z-index: 1051;
+        max-width: 520px;
+        width: min(92vw, 520px);
+        border: 1px solid var(--tf-border);
+    }
+
+    .tf-modal.show {
+        display: block;
+    }
+
+    .tf-modal-header {
+        padding: 1.1rem 1.25rem;
+        border-bottom: 1px solid var(--tf-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tf-modal-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--tf-primary);
+    }
+
+    .tf-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        color: var(--tf-muted);
+        cursor: pointer;
+    }
+
+    .tf-modal-body {
+        padding: 1.25rem;
+    }
+
+    .tf-modal-footer {
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--tf-border);
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .tf-modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.9rem;
+    }
+
+    .tf-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .tf-form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    @media (max-width: 767px) {
+        .tf-filter-group { min-width: 100%; }
+        .tf-modal-grid { grid-template-columns: 1fr; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="tf-page-header">
     <h1 class="tf-page-title">QR Users</h1>
-    <p class="tf-page-subtitle">Generate dan buka QR user/karyawan untuk tahap input data dokumen</p>
+    <p class="tf-page-subtitle">QR permanent user untuk tahap input data dokumen, plus kontrol edit dan hapus operational tracking</p>
 </div>
+
+{% if success_message %}
+<div class="tf-alert tf-alert-success">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>{{ success_message }}</span>
+</div>
+{% endif %}
+
+{% if error_message %}
+<div class="tf-alert tf-alert-error">
+    <i class="bi bi-exclamation-circle-fill"></i>
+    <span>{{ error_message }}</span>
+</div>
+{% endif %}
 
 <section class="tf-metrics">
     <div class="tf-metric-card primary">
@@ -84,15 +310,15 @@
             <span class="tf-metric-label">Users</span>
         </div>
         <div class="tf-metric-value">{{ employee_count }}</div>
-        <div class="tf-metric-desc">User/karyawan aktif non-approver</div>
+        <div class="tf-metric-desc">User aktif dengan QR permanent</div>
     </div>
     <div class="tf-metric-card accent">
         <div class="tf-metric-header">
             <div class="tf-metric-icon accent"><i class="bi bi-qr-code"></i></div>
-            <span class="tf-metric-label">QR Access</span>
+            <span class="tf-metric-label">QR Ready</span>
         </div>
         <div class="tf-metric-value">{{ employee_count }}</div>
-        <div class="tf-metric-desc">Setiap user bisa generate QR masing-masing</div>
+        <div class="tf-metric-desc">QR user langsung tersedia di halaman ini</div>
     </div>
     <div class="tf-metric-card success">
         <div class="tf-metric-header">
@@ -107,50 +333,199 @@
 <div class="tf-panel">
     <div class="tf-panel-header">
         <div>
-            <div class="tf-panel-title"><i class="bi bi-person-vcard me-2"></i>User QR List</div>
-            <div class="tf-panel-subtitle">QR user dipakai untuk tahap 1 pengisian data dokumen</div>
+            <div class="tf-panel-title"><i class="bi bi-person-vcard me-2"></i>Permanent QR Users</div>
+            <div class="tf-panel-subtitle">QR di bawah ini bisa langsung dipakai untuk scan tahap 1</div>
         </div>
         <a href="/dashboard" class="btn-tf-outline tf-print-hide" style="font-size:.8rem;">
             <i class="bi bi-grid-1x2 me-1"></i>Dashboard
         </a>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="tf-panel-body">
+        {% if users %}
+        <div class="tf-user-grid">
+            {% for user in users %}
+            <div class="tf-user-qr-card">
+                <div class="tf-user-qr-head">
+                    <div>
+                        <div class="tf-user-qr-name">{{ user.full_name }}</div>
+                        <div class="tf-user-qr-meta">{{ user.department or "No department" }}</div>
+                        <div class="tf-user-qr-meta">{{ user.email }}</div>
+                    </div>
+                    <span class="tf-user-role">{{ user.role }}</span>
+                </div>
+                <div class="tf-user-qr-body">
+                    <div class="tf-user-qr-frame">
+                        <img src="{{ user.qr_image_url }}" alt="QR user {{ user.full_name }}">
+                    </div>
+                    <div class="tf-user-qr-link">{{ user.qr_target_url }}</div>
+                    <div class="tf-action-group">
+                        <a href="/generate-user-qr/{{ user.id }}" class="tf-action-btn">
+                            <i class="bi bi-qr-code"></i>
+                            <span>View QR</span>
+                        </a>
+                        <a href="{{ user.qr_image_url }}" target="_blank" class="tf-action-btn">
+                            <i class="bi bi-image"></i>
+                            <span>Open Image</span>
+                        </a>
+                        <a href="/submit/user/{{ user.id }}" target="_blank" class="tf-action-btn">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            <span>Open Form</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="tf-empty">
+            <i class="bi bi-person-x"></i>
+            <div>Belum ada user aktif yang bisa dibuatkan QR permanent.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="tf-panel">
+    <div class="tf-panel-header">
+        <div>
+            <div class="tf-panel-title"><i class="bi bi-table me-2"></i>Operational Tracking Control</div>
+            <div class="tf-panel-subtitle">Edit status, edit data dokumen, dan hapus data tracking dari halaman ini</div>
+        </div>
+    </div>
+
+    <div class="tf-panel-body tf-print-hide" style="border-bottom:1px solid var(--tf-border); padding-bottom:1.25rem;">
+        <form method="get" action="/dashboard/users" class="tf-filter-bar">
+            <div class="tf-filter-group">
+                <label class="tf-label">Search</label>
+                <input type="text" class="tf-input" name="search" value="{{ search_query }}" placeholder="Name, invoice, type...">
+            </div>
+            <div class="tf-filter-group" style="min-width:130px; flex:.6;">
+                <label class="tf-label">Status</label>
+                <select class="tf-select" name="status">
+                    <option value="">All Status</option>
+                    {% for st in allowed_statuses %}
+                    <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="tf-filter-group" style="min-width:130px; flex:.6;">
+                <label class="tf-label">Document Type</label>
+                <select class="tf-select" name="document_type">
+                    <option value="">All Types</option>
+                    {% for dt in allowed_document_types %}
+                    <option value="{{ dt }}" {% if selected_document_type == dt %}selected{% endif %}>{{ dt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="tf-filter-group" style="min-width:140px; flex:.7;">
+                <label class="tf-label">Date From</label>
+                <input type="date" class="tf-input" name="date_from" value="{{ selected_date_from }}">
+            </div>
+            <div class="tf-filter-group" style="min-width:140px; flex:.7;">
+                <label class="tf-label">Date To</label>
+                <input type="date" class="tf-input" name="date_to" value="{{ selected_date_to }}">
+            </div>
+            <div class="tf-filter-actions">
+                <button type="submit" class="btn-tf-primary" style="white-space:nowrap;">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+                <a href="/dashboard/users" class="btn-tf-outline" style="white-space:nowrap;">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div style="width: 100%; overflow-x: auto;">
         <table class="tf-table">
             <thead>
                 <tr>
-                    <th>User Name</th>
-                    <th>Department</th>
-                    <th>Role</th>
-                    <th>Email</th>
-                    <th style="text-align:right; width:220px;">Action</th>
+                    <th style="min-width: 110px;">Date</th>
+                    <th style="min-width: 150px;">Current Location</th>
+                    <th style="min-width: 100px;">Doc Type</th>
+                    <th style="min-width: 130px;">Invoice Number</th>
+                    <th style="min-width: 110px;">Qty / Price</th>
+                    <th style="min-width: 150px;">Remarks</th>
+                    <th style="min-width: 130px;">Attachment</th>
+                    <th style="min-width: 100px;">Status</th>
+                    <th style="min-width: 150px;">Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for user in users %}
+                {% for document in documents %}
                 <tr>
-                    <td style="font-weight:600;">{{ user.full_name }}</td>
-                    <td style="font-size:.85rem; color:var(--tf-muted);">{{ user.department or "—" }}</td>
-                    <td><span class="tf-user-role">{{ user.role }}</span></td>
-                    <td style="font-size:.82rem; color:var(--tf-muted);">{{ user.email }}</td>
+                    <td style="white-space:nowrap;">
+                        <span style="font-size:.82rem; color:var(--tf-muted); display:block;">
+                            {{ document.created_at.strftime("%d %b %Y") if document.created_at else "-" }}
+                        </span>
+                        <span style="font-size:.72rem; color:#94a3b8; display:block;">
+                            {{ document.created_at.strftime("%H:%M") if document.created_at else "" }}
+                        </span>
+                    </td>
+                    <td style="font-weight:600;">
+                        {% if document.approver %}
+                            {{ document.approver.approval_name }}
+                        {% else %}
+                            <span style="color:var(--tf-muted); font-weight:500;">Belum diserahkan ke approver</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="tf-badge info" style="font-size:.72rem;">{{ document.document_type or "-" }}</span></td>
+                    <td>
+                        <code style="font-size:.82rem; background:#f1f5f9; padding:.15rem .4rem; border-radius:.25rem; word-break: break-word;">
+                            {{ document.invoice_number }}
+                        </code>
+                    </td>
+                    <td style="font-size:.85rem;">{{ document.qty_price or "-" }}</td>
+                    <td style="font-size:.82rem; color:var(--tf-muted);">{{ document.notes or "-" }}</td>
+                    <td>
+                        {% if document.files %}
+                            {% for file in document.files %}
+                            <a href="/{{ file.file_path }}" target="_blank" class="tf-attachment" title="{{ file.original_name }}">
+                                {% if file.file_type == 'image' %}
+                                    <i class="bi bi-image"></i>
+                                {% else %}
+                                    <i class="bi bi-paperclip"></i>
+                                {% endif %}
+                                {{ file.original_name[:12] }}{% if file.original_name|length > 12 %}...{% endif %}
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <span style="font-size:.78rem; color:#cbd5e1;">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ status_badge(document.status_display) }}</td>
                     <td>
                         <div class="tf-action-group">
-                            <a href="/generate-user-qr/{{ user.id }}" class="tf-action-btn" title="Generate atau view QR user">
-                                <i class="bi bi-qr-code"></i>
-                                <span>Generate / View QR</span>
-                            </a>
-                            <a href="/submit/user/{{ user.id }}" class="tf-action-btn" title="Buka form tahap 1 user">
-                                <i class="bi bi-box-arrow-up-right"></i>
-                                <span>Open Form</span>
-                            </a>
+                            <button
+                                type="button"
+                                class="tf-action-btn"
+                                onclick="openEditModal(
+                                    {{ document.id }},
+                                    {{ document.document_type | tojson }},
+                                    {{ document.invoice_number | tojson }},
+                                    {{ (document.qty_price or '') | tojson }},
+                                    {{ document.status_display | tojson }},
+                                    {{ (document.notes or '') | tojson }}
+                                )"
+                            >
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Edit</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="tf-action-btn danger"
+                                onclick="openDeleteModal({{ document.id }}, {{ document.invoice_number | tojson }})"
+                            >
+                                <i class="bi bi-trash3"></i>
+                                <span>Delete</span>
+                            </button>
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5">
+                    <td colspan="9">
                         <div class="tf-empty">
-                            <i class="bi bi-person-x"></i>
-                            <div>Belum ada user/karyawan aktif non-approver yang bisa dibuatkan QR.</div>
+                            <i class="bi bi-inbox"></i>
+                            <div>Belum ada data operational tracking.</div>
                         </div>
                     </td>
                 </tr>
@@ -159,4 +534,120 @@
         </table>
     </div>
 </div>
+
+<div class="tf-modal-backdrop" id="editModalBackdrop"></div>
+<div class="tf-modal" id="editModal">
+    <div class="tf-modal-header">
+        <div class="tf-modal-title">Edit Operational Tracking</div>
+        <button type="button" class="tf-modal-close" onclick="closeEditModal()">&times;</button>
+    </div>
+    <form method="post" id="editDocumentForm">
+        <div class="tf-modal-body">
+            <div class="tf-modal-grid">
+                <div class="tf-form-group">
+                    <label class="tf-label" for="edit_document_type">Document Type</label>
+                    <select class="tf-select" id="edit_document_type" name="document_type" required>
+                        {% for dt in allowed_document_types %}
+                        <option value="{{ dt }}">{{ dt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="tf-form-group">
+                    <label class="tf-label" for="edit_status">Status</label>
+                    <select class="tf-select" id="edit_status" name="status" required>
+                        {% for st in allowed_statuses %}
+                        <option value="{{ st }}">{{ st }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="tf-form-group">
+                    <label class="tf-label" for="edit_invoice_number">Invoice Number</label>
+                    <input class="tf-input" id="edit_invoice_number" name="invoice_number" required>
+                </div>
+                <div class="tf-form-group">
+                    <label class="tf-label" for="edit_qty_price">Qty / Price</label>
+                    <input class="tf-input" id="edit_qty_price" name="qty_price" required>
+                </div>
+                <div class="tf-form-group full">
+                    <label class="tf-label" for="edit_notes">Remarks</label>
+                    <textarea class="tf-input" id="edit_notes" name="notes" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="tf-modal-footer">
+            <button type="button" class="btn-tf-outline" onclick="closeEditModal()">Batal</button>
+            <button type="submit" class="btn-tf-primary">Simpan Perubahan</button>
+        </div>
+    </form>
+</div>
+
+<div class="tf-modal-backdrop" id="deleteModalBackdrop"></div>
+<div class="tf-modal" id="deleteModal" style="max-width:420px;">
+    <div class="tf-modal-header">
+        <div class="tf-modal-title">Delete Tracking Data</div>
+        <button type="button" class="tf-modal-close" onclick="closeDeleteModal()">&times;</button>
+    </div>
+    <div class="tf-modal-body">
+        <p>Apakah Anda yakin ingin menghapus data tracking untuk invoice <strong id="deleteInvoiceNumber"></strong>?</p>
+        <p style="font-size:0.82rem; color:var(--tf-muted); margin-top:0.75rem;">
+            Data dokumen, lampiran, dan log tracking terkait akan dihapus dari operational tracking table.
+        </p>
+    </div>
+    <div class="tf-modal-footer">
+        <button type="button" class="btn-tf-outline" onclick="closeDeleteModal()">Batal</button>
+        <button type="button" class="btn-tf-primary" style="background:var(--tf-danger);" onclick="confirmDelete()">Hapus</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    let deleteDocumentId = null;
+
+    window.openEditModal = function(id, documentType, invoiceNumber, qtyPrice, status, notes) {
+        document.getElementById('editDocumentForm').action = '/dashboard/users/documents/' + id + '/edit';
+        document.getElementById('edit_document_type').value = documentType;
+        document.getElementById('edit_status').value = status;
+        document.getElementById('edit_invoice_number').value = invoiceNumber;
+        document.getElementById('edit_qty_price').value = qtyPrice;
+        document.getElementById('edit_notes').value = notes || '';
+        document.getElementById('editModal').classList.add('show');
+        document.getElementById('editModalBackdrop').classList.add('show');
+    };
+
+    window.closeEditModal = function() {
+        document.getElementById('editModal').classList.remove('show');
+        document.getElementById('editModalBackdrop').classList.remove('show');
+    };
+
+    window.openDeleteModal = function(documentId, invoiceNumber) {
+        deleteDocumentId = documentId;
+        document.getElementById('deleteInvoiceNumber').textContent = invoiceNumber;
+        document.getElementById('deleteModal').classList.add('show');
+        document.getElementById('deleteModalBackdrop').classList.add('show');
+    };
+
+    window.closeDeleteModal = function() {
+        deleteDocumentId = null;
+        document.getElementById('deleteModal').classList.remove('show');
+        document.getElementById('deleteModalBackdrop').classList.remove('show');
+    };
+
+    window.confirmDelete = function() {
+        if (deleteDocumentId) {
+            window.location.href = '/dashboard/users/documents/' + deleteDocumentId + '/delete';
+        }
+    };
+
+    document.getElementById('editModalBackdrop').addEventListener('click', closeEditModal);
+    document.getElementById('deleteModalBackdrop').addEventListener('click', closeDeleteModal);
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeEditModal();
+            closeDeleteModal();
+        }
+    });
+})();
+</script>
 {% endblock %}

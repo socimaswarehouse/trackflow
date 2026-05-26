@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.approver import Approver
 from app.models.document import Document
@@ -104,6 +104,76 @@ def assign_document_to_approver(
     db.commit()
     db.refresh(document)
     return attach_display_status(document)
+
+
+def update_document_details(
+    db: Session,
+    document_id: int,
+    document_type: str,
+    invoice_number: str,
+    qty_price: str,
+    status: str,
+    notes: str | None = None,
+) -> Document | None:
+    document = (
+        db.query(Document)
+        .options(joinedload(Document.approver))
+        .filter(Document.id == document_id)
+        .first()
+    )
+    if document is None:
+        return None
+
+    normalized_invoice_number = invoice_number.strip()
+    conflict_document = find_open_document_by_invoice(
+        db,
+        invoice_number=normalized_invoice_number,
+    )
+    if conflict_document is not None and conflict_document.id != document.id:
+        raise ValueError(_build_locked_invoice_message(conflict_document))
+
+    database_status = to_database_status(status)
+    if database_status is None:
+        raise ValueError("Invalid document status.")
+
+    document.document_type = document_type.strip()
+    document.title = f"{document.document_type} Tracking"
+    document.invoice_number = normalized_invoice_number
+    document.qty_price = qty_price.strip()
+    document.status = database_status
+    document.notes = notes.strip() if notes else None
+    document.updated_at = datetime.utcnow()
+
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    return attach_display_status(document)
+
+
+def delete_document(db: Session, document_id: int) -> bool:
+    document = (
+        db.query(Document)
+        .options(selectinload(Document.files), selectinload(Document.status_logs))
+        .filter(Document.id == document_id)
+        .first()
+    )
+    if document is None:
+        return False
+
+    for file in document.files:
+        absolute_path = Path(__file__).resolve().parents[1] / file.file_path
+        try:
+            absolute_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        db.delete(file)
+
+    for log in document.status_logs:
+        db.delete(log)
+
+    db.delete(document)
+    db.commit()
+    return True
 
 
 def attach_file_to_document(
