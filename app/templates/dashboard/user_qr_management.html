@@ -14,6 +14,78 @@
 
 {% block extra_css %}
 <style>
+    .tf-page-header-qr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 1.25rem;
+        align-items: start;
+    }
+
+    .tf-page-header-copy {
+        min-width: 0;
+    }
+
+    .tf-page-header-side {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .tf-compact-qr-card {
+        width: 100%;
+        max-width: 260px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid var(--tf-border);
+        border-radius: var(--tf-radius);
+        box-shadow: var(--tf-shadow);
+        overflow: hidden;
+    }
+
+    .tf-compact-qr-head {
+        padding: 0.85rem 0.95rem 0.7rem;
+        border-bottom: 1px solid #eef3f8;
+    }
+
+    .tf-compact-qr-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--tf-primary);
+    }
+
+    .tf-compact-qr-meta {
+        font-size: 0.75rem;
+        color: var(--tf-muted);
+        margin-top: 0.15rem;
+        line-height: 1.4;
+    }
+
+    .tf-compact-qr-body {
+        padding: 0.9rem;
+        text-align: center;
+    }
+
+    .tf-compact-qr-frame {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.9rem;
+        padding: 0.65rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .tf-compact-qr-frame img {
+        width: 100%;
+        max-width: 140px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .tf-compact-qr-actions {
+        display: flex;
+        gap: 0.45rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
     .tf-user-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -277,6 +349,12 @@
     }
 
     @media (max-width: 767px) {
+        .tf-page-header-qr {
+            grid-template-columns: 1fr;
+        }
+        .tf-page-header-side {
+            justify-content: flex-start;
+        }
         .tf-filter-group { min-width: 100%; }
         .tf-modal-grid { grid-template-columns: 1fr; }
     }
@@ -285,8 +363,39 @@
 
 {% block content %}
 <div class="tf-page-header">
-    <h1 class="tf-page-title">QR Users</h1>
-    <p class="tf-page-subtitle">QR permanent user untuk tahap input data dokumen, plus kontrol edit dan hapus operational tracking</p>
+    <div class="tf-page-header-qr">
+        <div class="tf-page-header-copy">
+            <h1 class="tf-page-title">QR Users</h1>
+            <p class="tf-page-subtitle">QR permanent user untuk tahap input data dokumen, plus kontrol edit dan hapus operational tracking</p>
+        </div>
+        <div class="tf-page-header-side">
+            {% if users %}
+            {% set featured_user = users[0] %}
+            <div class="tf-compact-qr-card">
+                <div class="tf-compact-qr-head">
+                    <div class="tf-compact-qr-title">{{ featured_user.full_name }}</div>
+                    <div class="tf-compact-qr-meta">{{ featured_user.department or "No department" }}</div>
+                    <div class="tf-compact-qr-meta">QR permanent tahap 1</div>
+                </div>
+                <div class="tf-compact-qr-body">
+                    <div class="tf-compact-qr-frame">
+                        <img src="{{ featured_user.qr_image_url }}" alt="QR user {{ featured_user.full_name }}">
+                    </div>
+                    <div class="tf-compact-qr-actions">
+                        <a href="/generate-user-qr/{{ featured_user.id }}" class="tf-action-btn">
+                            <i class="bi bi-qr-code"></i>
+                            <span>View</span>
+                        </a>
+                        <a href="/submit/user/{{ featured_user.id }}" target="_blank" class="tf-action-btn">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            <span>Form</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
 {% if success_message %}
@@ -333,64 +442,12 @@
 <div class="tf-panel">
     <div class="tf-panel-header">
         <div>
-            <div class="tf-panel-title"><i class="bi bi-person-vcard me-2"></i>Permanent QR Users</div>
-            <div class="tf-panel-subtitle">QR di bawah ini bisa langsung dipakai untuk scan tahap 1</div>
+            <div class="tf-panel-title"><i class="bi bi-table me-2"></i>Operational Tracking Control</div>
+            <div class="tf-panel-subtitle">Edit status, edit data dokumen, dan hapus data tracking dari halaman ini</div>
         </div>
         <a href="/dashboard" class="btn-tf-outline tf-print-hide" style="font-size:.8rem;">
             <i class="bi bi-grid-1x2 me-1"></i>Dashboard
         </a>
-    </div>
-    <div class="tf-panel-body">
-        {% if users %}
-        <div class="tf-user-grid">
-            {% for user in users %}
-            <div class="tf-user-qr-card">
-                <div class="tf-user-qr-head">
-                    <div>
-                        <div class="tf-user-qr-name">{{ user.full_name }}</div>
-                        <div class="tf-user-qr-meta">{{ user.department or "No department" }}</div>
-                        <div class="tf-user-qr-meta">{{ user.email }}</div>
-                    </div>
-                    <span class="tf-user-role">{{ user.role }}</span>
-                </div>
-                <div class="tf-user-qr-body">
-                    <div class="tf-user-qr-frame">
-                        <img src="{{ user.qr_image_url }}" alt="QR user {{ user.full_name }}">
-                    </div>
-                    <div class="tf-user-qr-link">{{ user.qr_target_url }}</div>
-                    <div class="tf-action-group">
-                        <a href="/generate-user-qr/{{ user.id }}" class="tf-action-btn">
-                            <i class="bi bi-qr-code"></i>
-                            <span>View QR</span>
-                        </a>
-                        <a href="{{ user.qr_image_url }}" target="_blank" class="tf-action-btn">
-                            <i class="bi bi-image"></i>
-                            <span>Open Image</span>
-                        </a>
-                        <a href="/submit/user/{{ user.id }}" target="_blank" class="tf-action-btn">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                            <span>Open Form</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="tf-empty">
-            <i class="bi bi-person-x"></i>
-            <div>Belum ada user aktif yang bisa dibuatkan QR permanent.</div>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<div class="tf-panel">
-    <div class="tf-panel-header">
-        <div>
-            <div class="tf-panel-title"><i class="bi bi-table me-2"></i>Operational Tracking Control</div>
-            <div class="tf-panel-subtitle">Edit status, edit data dokumen, dan hapus data tracking dari halaman ini</div>
-        </div>
     </div>
 
     <div class="tf-panel-body tf-print-hide" style="border-bottom:1px solid var(--tf-border); padding-bottom:1.25rem;">
@@ -496,23 +553,22 @@
                         <div class="tf-action-group">
                             <button
                                 type="button"
-                                class="tf-action-btn"
-                                onclick="openEditModal(
-                                    {{ document.id }},
-                                    {{ document.document_type | tojson }},
-                                    {{ document.invoice_number | tojson }},
-                                    {{ (document.qty_price or '') | tojson }},
-                                    {{ document.status_display | tojson }},
-                                    {{ (document.notes or '') | tojson }}
-                                )"
+                                class="tf-action-btn js-edit-document"
+                                data-document-id="{{ document.id }}"
+                                data-document-type="{{ document.document_type }}"
+                                data-invoice-number="{{ document.invoice_number }}"
+                                data-qty-price="{{ document.qty_price or '' }}"
+                                data-status="{{ document.status_display }}"
+                                data-notes="{{ document.notes or '' }}"
                             >
                                 <i class="bi bi-pencil-square"></i>
                                 <span>Edit</span>
                             </button>
                             <button
                                 type="button"
-                                class="tf-action-btn danger"
-                                onclick="openDeleteModal({{ document.id }}, {{ document.invoice_number | tojson }})"
+                                class="tf-action-btn danger js-delete-document"
+                                data-document-id="{{ document.id }}"
+                                data-invoice-number="{{ document.invoice_number }}"
                             >
                                 <i class="bi bi-trash3"></i>
                                 <span>Delete</span>
@@ -539,7 +595,7 @@
 <div class="tf-modal" id="editModal">
     <div class="tf-modal-header">
         <div class="tf-modal-title">Edit Operational Tracking</div>
-        <button type="button" class="tf-modal-close" onclick="closeEditModal()">&times;</button>
+        <button type="button" class="tf-modal-close" id="editModalCloseBtn">&times;</button>
     </div>
     <form method="post" id="editDocumentForm">
         <div class="tf-modal-body">
@@ -575,7 +631,7 @@
             </div>
         </div>
         <div class="tf-modal-footer">
-            <button type="button" class="btn-tf-outline" onclick="closeEditModal()">Batal</button>
+            <button type="button" class="btn-tf-outline" id="editModalCancelBtn">Batal</button>
             <button type="submit" class="btn-tf-primary">Simpan Perubahan</button>
         </div>
     </form>
@@ -585,7 +641,7 @@
 <div class="tf-modal" id="deleteModal" style="max-width:420px;">
     <div class="tf-modal-header">
         <div class="tf-modal-title">Delete Tracking Data</div>
-        <button type="button" class="tf-modal-close" onclick="closeDeleteModal()">&times;</button>
+        <button type="button" class="tf-modal-close" id="deleteModalCloseBtn">&times;</button>
     </div>
     <div class="tf-modal-body">
         <p>Apakah Anda yakin ingin menghapus data tracking untuk invoice <strong id="deleteInvoiceNumber"></strong>?</p>
@@ -594,8 +650,8 @@
         </p>
     </div>
     <div class="tf-modal-footer">
-        <button type="button" class="btn-tf-outline" onclick="closeDeleteModal()">Batal</button>
-        <button type="button" class="btn-tf-primary" style="background:var(--tf-danger);" onclick="confirmDelete()">Hapus</button>
+        <button type="button" class="btn-tf-outline" id="deleteModalCancelBtn">Batal</button>
+        <button type="button" class="btn-tf-primary" style="background:var(--tf-danger);" id="deleteModalConfirmBtn">Hapus</button>
     </div>
 </div>
 {% endblock %}
@@ -604,44 +660,77 @@
 <script>
 (function() {
     let deleteDocumentId = null;
+    const editModal = document.getElementById('editModal');
+    const editBackdrop = document.getElementById('editModalBackdrop');
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteBackdrop = document.getElementById('deleteModalBackdrop');
+    const editButtons = document.querySelectorAll('.js-edit-document');
+    const deleteButtons = document.querySelectorAll('.js-delete-document');
 
-    window.openEditModal = function(id, documentType, invoiceNumber, qtyPrice, status, notes) {
+    function openEditModal(id, documentType, invoiceNumber, qtyPrice, status, notes) {
         document.getElementById('editDocumentForm').action = '/dashboard/users/documents/' + id + '/edit';
         document.getElementById('edit_document_type').value = documentType;
         document.getElementById('edit_status').value = status;
         document.getElementById('edit_invoice_number').value = invoiceNumber;
         document.getElementById('edit_qty_price').value = qtyPrice;
         document.getElementById('edit_notes').value = notes || '';
-        document.getElementById('editModal').classList.add('show');
-        document.getElementById('editModalBackdrop').classList.add('show');
-    };
+        editModal.classList.add('show');
+        editBackdrop.classList.add('show');
+    }
 
-    window.closeEditModal = function() {
-        document.getElementById('editModal').classList.remove('show');
-        document.getElementById('editModalBackdrop').classList.remove('show');
-    };
+    function closeEditModal() {
+        editModal.classList.remove('show');
+        editBackdrop.classList.remove('show');
+    }
 
-    window.openDeleteModal = function(documentId, invoiceNumber) {
+    function openDeleteModal(documentId, invoiceNumber) {
         deleteDocumentId = documentId;
         document.getElementById('deleteInvoiceNumber').textContent = invoiceNumber;
-        document.getElementById('deleteModal').classList.add('show');
-        document.getElementById('deleteModalBackdrop').classList.add('show');
-    };
+        deleteModal.classList.add('show');
+        deleteBackdrop.classList.add('show');
+    }
 
-    window.closeDeleteModal = function() {
+    function closeDeleteModal() {
         deleteDocumentId = null;
-        document.getElementById('deleteModal').classList.remove('show');
-        document.getElementById('deleteModalBackdrop').classList.remove('show');
-    };
+        deleteModal.classList.remove('show');
+        deleteBackdrop.classList.remove('show');
+    }
 
-    window.confirmDelete = function() {
+    function confirmDelete() {
         if (deleteDocumentId) {
             window.location.href = '/dashboard/users/documents/' + deleteDocumentId + '/delete';
         }
-    };
+    }
 
-    document.getElementById('editModalBackdrop').addEventListener('click', closeEditModal);
-    document.getElementById('deleteModalBackdrop').addEventListener('click', closeDeleteModal);
+    editButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            openEditModal(
+                button.dataset.documentId,
+                button.dataset.documentType,
+                button.dataset.invoiceNumber,
+                button.dataset.qtyPrice,
+                button.dataset.status,
+                button.dataset.notes
+            );
+        });
+    });
+
+    deleteButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            openDeleteModal(
+                button.dataset.documentId,
+                button.dataset.invoiceNumber
+            );
+        });
+    });
+
+    document.getElementById('editModalCloseBtn').addEventListener('click', closeEditModal);
+    document.getElementById('editModalCancelBtn').addEventListener('click', closeEditModal);
+    document.getElementById('deleteModalCloseBtn').addEventListener('click', closeDeleteModal);
+    document.getElementById('deleteModalCancelBtn').addEventListener('click', closeDeleteModal);
+    document.getElementById('deleteModalConfirmBtn').addEventListener('click', confirmDelete);
+    editBackdrop.addEventListener('click', closeEditModal);
+    deleteBackdrop.addEventListener('click', closeDeleteModal);
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeEditModal();
