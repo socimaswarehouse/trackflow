@@ -1,4 +1,4 @@
-"""Permanent approver QR routes."""
+"""Permanent QR routes."""
 
 from pathlib import Path
 
@@ -12,6 +12,7 @@ from app.services.approver_service import (
     get_approver_by_slug,
     update_approver_qr_path,
 )
+from app.services.user_service import get_user_by_id
 from app.utils.qr_generator import generate_qr_code
 
 router = APIRouter()
@@ -44,10 +45,47 @@ def generate_approver_qr(
         request=request,
         name="qr_detail.html",
         context={
-            "approver": approver,
+            "entity_name": approver.approval_name,
+            "entity_subtitle": approver.department,
+            "entity_label": "Approver",
             "qr_status": qr_status,
             "qr_image_url": f"/{qr_path}",
             "target_url": f"{base_url}/submit/{approver.slug}",
+            "open_page_url": f"/submit/{approver.slug}",
+            "open_page_label": "Open Upload Page",
+            "page_description": "Scan QR approver ini untuk upload bukti bahwa dokumen fisik sudah berada di approver tersebut.",
+        },
+    )
+
+
+@router.get("/generate-user-qr/{user_id}", tags=["QR"])
+def generate_user_qr(
+    request: Request,
+    user_id: int,
+    db: Session = Depends(get_db),
+):
+    user = get_user_by_id(db, user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    base_url = get_base_url()
+    qr_slug = f"user-{user.id}"
+    target_url = f"{base_url}/submit/user/{user.id}"
+    qr_path = generate_qr_code(qr_slug, target_url)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="qr_detail.html",
+        context={
+            "entity_name": user.full_name,
+            "entity_subtitle": user.department,
+            "entity_label": "User",
+            "qr_status": "QR Ready",
+            "qr_image_url": f"/{qr_path}",
+            "target_url": target_url,
+            "open_page_url": f"/submit/user/{user.id}",
+            "open_page_label": "Open Submission Page",
+            "page_description": "Scan QR user ini untuk mengisi data dokumen lebih dulu sebelum dokumen fisik diserahkan ke approver.",
         },
     )
 

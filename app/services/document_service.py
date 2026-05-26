@@ -5,19 +5,29 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.models.approver import Approver
 from app.models.document import Document
 from app.models.document_file import DocumentFile
 from app.models.user import User
 from app.schemas.document_schema import DocumentSubmissionSchema
 from app.services.status_service import attach_display_status, to_database_status
 
+TERMINAL_DOCUMENT_STATUSES = {"APPROVED", "COMPLETED", "REJECTED"}
+
 
 def create_document(
     db: Session,
-    approver_id: int,
+    submitter_id: int,
     document_data: DocumentSubmissionSchema,
+    approver_id: int | None = None,
 ) -> Document:
-    submitter_id = _get_default_submitter_id(db)
+    existing_document = find_open_document_by_invoice(
+        db,
+        invoice_number=document_data.invoice_number,
+    )
+    if existing_document is not None:
+        raise ValueError(_build_locked_invoice_message(existing_document))
+
     timestamp = datetime.utcnow()
     database_status = to_database_status(document_data.status)
     if database_status is None:
@@ -40,6 +50,57 @@ def create_document(
 
     db.add(document)
     db.flush()
+    db.commit()
+    db.refresh(document)
+    return attach_display_status(document)
+
+
+def find_open_document_by_invoice(
+    db: Session,
+    invoice_number: str,
+) -> Document | None:
+    normalized_invoice_number = invoice_number.strip()
+    if not normalized_invoice_number:
+        return None
+
+    document = (
+        db.query(Document)
+        .filter(Document.invoice_number == normalized_invoice_number)
+        .filter(~Document.status.in_(TERMINAL_DOCUMENT_STATUSES))
+        .order_by(Document.created_at.desc(), Document.id.desc())
+        .first()
+    )
+    if document is None:
+        return None
+
+    return attach_display_status(document)
+
+
+def assign_document_to_approver(
+    db: Session,
+    document: Document,
+    approver: Approver,
+) -> Document:
+    current_status = (document.status or "").upper()
+
+    if document.approver_id and document.approver_id != approver.id:
+        current_approver_name = (
+            document.approver.approval_name
+            if document.approver is not None
+            else "approver lain"
+        )
+        if current_status not in TERMINAL_DOCUMENT_STATUSES:
+            raise ValueError(
+                "Dokumen invoice "
+                f"{document.invoice_number} masih berada di {current_approver_name} "
+                "dan belum approved."
+            )
+
+    timestamp = datetime.utcnow()
+    document.approver_id = approver.id
+    document.updated_at = timestamp
+
+    db.add(document)
     db.commit()
     db.refresh(document)
     return attach_display_status(document)
@@ -94,3 +155,16 @@ def _get_default_submitter_id(db: Session) -> int:
 
 def _generate_doc_number() -> str:
     return f"DOC-{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
+
+
+def _build_locked_invoice_message(document: Document) -> str:
+    if document.approver is not None:
+        return (
+            f"Invoice {document.invoice_number} masih berada di "
+            f"{document.approver.approval_name} dan belum approved."
+        )
+
+    return (
+        f"Invoice {document.invoice_number} sudah pernah disubmit dan masih "
+        "menunggu scan QR approver."
+    )

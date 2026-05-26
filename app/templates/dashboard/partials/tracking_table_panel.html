@@ -61,7 +61,7 @@
             <thead>
                 <tr>
                     <th style="min-width: 110px;">Date</th>
-                    <th style="min-width: 120px;">Approval Name</th>
+                    <th style="min-width: 150px;">Current Location</th>
                     <th style="min-width: 100px;">Doc Type</th>
                     <th style="min-width: 130px;">Invoice Number</th>
                     <th style="min-width: 110px;">Qty / Price</th>
@@ -81,7 +81,13 @@
                             {{ document.created_at.strftime("%H:%M") if document.created_at else "" }}
                         </span>
                     </td>
-                    <td style="font-weight:600; min-width: 120px;">{{ document.approver.approval_name if document.approver else "-" }}</td>
+                    <td style="font-weight:600; min-width: 150px;">
+                        {% if document.approver %}
+                            {{ document.approver.approval_name }}
+                        {% else %}
+                            <span style="color:var(--tf-muted); font-weight:500;">Belum diserahkan ke approver</span>
+                        {% endif %}
+                    </td>
                     <td style="min-width: 100px;">
                         <span class="tf-badge info" style="font-size:.72rem;">{{ document.document_type or "-" }}</span>
                     </td>
