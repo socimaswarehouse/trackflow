@@ -81,21 +81,6 @@ def assign_document_to_approver(
     document: Document,
     approver: Approver,
 ) -> Document:
-    current_status = (document.status or "").upper()
-
-    if document.approver_id and document.approver_id != approver.id:
-        current_approver_name = (
-            document.approver.approval_name
-            if document.approver is not None
-            else "approver lain"
-        )
-        if current_status not in TERMINAL_DOCUMENT_STATUSES:
-            raise ValueError(
-                "Dokumen invoice "
-                f"{document.invoice_number} masih berada di {current_approver_name} "
-                "dan belum approved."
-            )
-
     timestamp = datetime.utcnow()
     document.approver_id = approver.id
     document.updated_at = timestamp

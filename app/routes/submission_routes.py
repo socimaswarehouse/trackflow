@@ -17,6 +17,7 @@ from app.services.document_service import (
     assign_document_to_approver,
     attach_file_to_document,
     create_document,
+    find_open_document_by_invoice,
 )
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES, attach_display_status
 from app.services.user_service import get_user_by_id
@@ -138,8 +139,6 @@ def get_approver_upload_page(
 
     active_document = _get_active_document_from_request(request, db)
     page_error = request.query_params.get("error")
-    if page_error is None:
-        page_error = _build_handoff_guard_message(active_document, approver.id)
 
     return _render_approver_upload_page(
         request=request,
@@ -154,7 +153,7 @@ def get_approver_upload_page(
 async def submit_approver_handoff(
     request: Request,
     slug: str,
-    document_id: int = Form(...),
+    invoice_number: str = Form(...),
     attachment: UploadFile | None = File(default=None),
     camera_attachment: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
@@ -163,8 +162,20 @@ async def submit_approver_handoff(
     if approver is None:
         raise HTTPException(status_code=404, detail="Approver not found")
 
-    active_document = _get_document_for_handoff(db, document_id)
+    cleaned_invoice_number = invoice_number.strip()
+    active_document = find_open_document_by_invoice(db, cleaned_invoice_number)
     uploaded_attachment = _pick_uploaded_attachment(camera_attachment, attachment)
+
+    if not cleaned_invoice_number:
+        return _render_approver_upload_page(
+            request=request,
+            approver=approver,
+            active_document=None,
+            success_message=None,
+            error_message="Invoice Number wajib diisi sebelum upload bukti dokumen.",
+            form_invoice_number=invoice_number,
+            status_code=422,
+        )
 
     if active_document is None:
         return _render_approver_upload_page(
@@ -172,7 +183,11 @@ async def submit_approver_handoff(
             approver=approver,
             active_document=None,
             success_message=None,
-            error_message="Dokumen aktif tidak ditemukan. Silakan scan QR user dan submit data dokumen terlebih dahulu.",
+            error_message=(
+                "Invoice Number tidak ditemukan di Document Data Submission "
+                "atau dokumen tersebut sudah selesai/rejected."
+            ),
+            form_invoice_number=cleaned_invoice_number,
             status_code=422,
         )
 
@@ -183,6 +198,7 @@ async def submit_approver_handoff(
             active_document=active_document,
             success_message=None,
             error_message="Foto atau file dokumen wajib diupload saat scan QR approver.",
+            form_invoice_number=cleaned_invoice_number,
             status_code=422,
         )
 
@@ -199,6 +215,7 @@ async def submit_approver_handoff(
             active_document=active_document,
             success_message=None,
             error_message=str(exc),
+            form_invoice_number=cleaned_invoice_number,
             status_code=422,
         )
 
@@ -210,6 +227,7 @@ async def submit_approver_handoff(
             active_document=active_document,
             success_message=None,
             error_message="Attachment is too large. Maximum file size is 10 MB.",
+            form_invoice_number=cleaned_invoice_number,
             status_code=422,
         )
 
@@ -225,10 +243,18 @@ async def submit_approver_handoff(
         file_size=len(file_content),
     )
 
-    return RedirectResponse(
+    response = RedirectResponse(
         url=f"/submit/{approver.slug}?success=1&doc={active_document.doc_number}",
         status_code=303,
     )
+    response.set_cookie(
+        key=ACTIVE_DOCUMENT_COOKIE,
+        value=str(active_document.id),
+        httponly=True,
+        samesite="lax",
+        max_age=60 * 60 * 12,
+    )
+    return response
 
 
 def _save_uploaded_file(original_name: str, content: bytes) -> Path | None:
@@ -285,9 +311,9 @@ def _render_approver_upload_page(
     active_document: Document | None,
     success_message: str | None,
     error_message: str | None,
+    form_invoice_number: str | None = None,
     status_code: int = 200,
 ):
-    upload_locked = _build_handoff_guard_message(active_document, approver.id) is not None
     return templates.TemplateResponse(
         request=request,
         name="approver_upload_form.html",
@@ -296,7 +322,13 @@ def _render_approver_upload_page(
             "active_document": active_document,
             "success_message": success_message,
             "error_message": error_message,
-            "upload_locked": upload_locked,
+            "form_invoice_number": (
+                form_invoice_number
+                if form_invoice_number is not None
+                else active_document.invoice_number
+                if active_document is not None
+                else ""
+            ),
         },
         status_code=status_code,
     )
@@ -354,11 +386,11 @@ def _build_approver_success_message(request: Request) -> str | None:
     document_number = request.query_params.get("doc")
     if document_number:
         return (
-            "Bukti serah dokumen berhasil diupload. "
+            "Bukti serah dokumen berhasil diupload dan Current Location sudah diperbarui. "
             f"Reference: {document_number}"
         )
 
-    return "Bukti serah dokumen berhasil diupload."
+    return "Bukti serah dokumen berhasil diupload dan Current Location sudah diperbarui."
 
 
 def _get_active_document_from_request(
@@ -407,26 +439,3 @@ def _get_user_active_document(
         return None
 
     return active_document
-
-
-def _build_handoff_guard_message(
-    document: Document | None,
-    approver_id: int,
-) -> str | None:
-    if document is None:
-        return "Belum ada dokumen aktif. Scan QR user dan submit data dokumen terlebih dahulu."
-
-    if document.approver_id and document.approver_id != approver_id:
-        current_status = (document.status or "").upper()
-        if current_status not in {"APPROVED", "COMPLETED", "REJECTED"}:
-            current_approver_name = (
-                document.approver.approval_name
-                if document.approver is not None
-                else "approver lain"
-            )
-            return (
-                f"Invoice {document.invoice_number} masih berada di "
-                f"{current_approver_name} dan belum approved."
-            )
-
-    return None
