@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.config import get_admin_nik, get_admin_password
 from app.services.approver_service import (
     create_approver,
     delete_approver,
@@ -190,7 +191,7 @@ def get_user_qr_management(
         request=request,
         name="dashboard/user_qr_management.html",
         context={
-            "page_title": "QR Users",
+            "page_title": "Document Request",
             "active_menu": "users",
             "users": users,
             "generated_user": generated_user,
@@ -207,6 +208,24 @@ def get_user_qr_management(
             "error_message": request.query_params.get("error"),
             **summary,
         },
+    )
+
+
+@router.post("/dashboard/users/verify-access", tags=["Dashboard API"])
+def verify_access(
+    nik: str = Form(...),
+    password: str = Form(...),
+):
+    """Verify NIK and password for Document Request page."""
+    admin_nik = get_admin_nik()
+    admin_password = get_admin_password()
+
+    if nik == admin_nik and password == admin_password:
+        return JSONResponse({"status": "success", "message": "Access granted"})
+
+    return JSONResponse(
+        {"status": "error", "message": "NIK atau Password salah."},
+        status_code=401,
     )
 
 

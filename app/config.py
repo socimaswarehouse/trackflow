@@ -16,3 +16,11 @@ def get_base_url() -> str:
         raise ValueError("BASE_URL is not set in environment variables")
 
     return base_url
+
+
+def get_admin_nik() -> str:
+    return os.getenv("ADMIN_NIK", "1234567890")
+
+
+def get_admin_password() -> str:
+    return os.getenv("ADMIN_PASSWORD", "admin123")
