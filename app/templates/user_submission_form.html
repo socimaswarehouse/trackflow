@@ -227,11 +227,7 @@
             </div>
 
             <div class="tf-card-body">
-                <div class="tf-person-block">
-                    <div class="tf-label-mini"><i class="bi bi-person-badge"></i> User</div>
-                    <div class="tf-name">{{ user.full_name }}</div>
-                    <div class="tf-subtext">{{ user.department or 'No department' }}</div>
-                </div>
+
 
                 {% if active_document %}
                 <div class="tf-active-doc">
@@ -285,7 +281,6 @@
                             id="invoice_number"
                             name="invoice_number"
                             value="{{ form_data.invoice_number }}"
-                            placeholder="e.g. 5777"
                             required
                             autocomplete="off"
                         >
@@ -301,7 +296,6 @@
                             id="qty_price"
                             name="qty_price"
                             value="{{ form_data.qty_price }}"
-                            placeholder="e.g. 12 x Rp 250.000"
                             required
                             autocomplete="off"
                         >
@@ -326,7 +320,6 @@
                             class="form-control"
                             id="notes"
                             name="notes"
-                            placeholder="Optional: add notes or remarks"
                         >{{ form_data.notes }}</textarea>
                     </div>
 
