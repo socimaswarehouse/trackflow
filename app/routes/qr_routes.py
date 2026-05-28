@@ -37,7 +37,7 @@ def generate_approver_qr(
     qr_path = approver.qr_code_path
 
     if not _is_existing_qr_available(qr_path):
-        target_url = f"{base_url}/submit/{approver.slug}"
+        target_url = f"/submit/{approver.slug}"
         qr_path = generate_qr_code(approver.slug, target_url)
         approver = update_approver_qr_path(db, approver, qr_path)
         qr_status = "New QR Generated"
@@ -72,7 +72,7 @@ def generate_user_qr(
 
     base_url = get_base_url()
     qr_slug = f"user-{user.id}"
-    target_url = f"{base_url}/submit/user/{user.id}"
+    target_url = f"/submit/user/{user.id}"
     qr_path = generate_qr_code(qr_slug, target_url)
 
     return templates.TemplateResponse(
@@ -85,7 +85,7 @@ def generate_user_qr(
             "qr_status": "QR Ready",
             "qr_image_src": f"/qr-image/user/{user.id}",
             "qr_image_url": f"/{qr_path}",
-            "target_url": target_url,
+            "target_url": f"{base_url}/submit/user/{user.id}",
             "open_page_url": f"/submit/user/{user.id}",
             "open_page_label": "Open Submission Page",
             "page_description": "Scan QR user ini untuk mengisi data dokumen lebih dulu sebelum dokumen fisik diserahkan ke approver.",
@@ -110,7 +110,7 @@ def get_approver_qr_image(
     if approver is None:
         raise HTTPException(status_code=404, detail="Approver not found")
 
-    target_url = f"{get_base_url()}/submit/{approver.slug}"
+    target_url = f"/submit/{approver.slug}"
     return Response(
         content=generate_qr_png_bytes(target_url),
         media_type="image/png",
@@ -126,7 +126,7 @@ def get_user_qr_image(
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
-    target_url = f"{get_base_url()}/submit/user/{user.id}"
+    target_url = f"/submit/user/{user.id}"
     return Response(
         content=generate_qr_png_bytes(target_url),
         media_type="image/png",
