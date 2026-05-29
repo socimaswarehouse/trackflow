@@ -151,6 +151,7 @@ def get_approver_upload_page(
         active_document=active_document,
         success_message=_build_approver_success_message(request),
         error_message=page_error,
+        db=db,
     )
 
 
@@ -180,6 +181,7 @@ async def submit_approver_handoff(
             error_message="Invoice Number wajib diisi sebelum upload bukti dokumen.",
             form_invoice_number=invoice_number,
             status_code=422,
+            db=db,
         )
 
     if active_document is None:
@@ -194,6 +196,7 @@ async def submit_approver_handoff(
             ),
             form_invoice_number=cleaned_invoice_number,
             status_code=422,
+            db=db,
         )
 
     if uploaded_attachment is None or not uploaded_attachment.filename:
@@ -205,6 +208,7 @@ async def submit_approver_handoff(
             error_message="Foto atau file dokumen wajib diupload saat scan QR approver.",
             form_invoice_number=cleaned_invoice_number,
             status_code=422,
+            db=db,
         )
 
     try:
@@ -222,6 +226,7 @@ async def submit_approver_handoff(
             error_message=str(exc),
             form_invoice_number=cleaned_invoice_number,
             status_code=422,
+            db=db,
         )
 
     file_content = await uploaded_attachment.read()
@@ -234,6 +239,7 @@ async def submit_approver_handoff(
             error_message="Attachment is too large. Maximum file size is 10 MB.",
             form_invoice_number=cleaned_invoice_number,
             status_code=422,
+            db=db,
         )
 
     saved_path = _save_uploaded_file(uploaded_attachment.filename, file_content)
@@ -319,7 +325,9 @@ def _render_approver_upload_page(
     error_message: str | None,
     form_invoice_number: str | None = None,
     status_code: int = 200,
+    db: Session | None = None,
 ):
+    invoice_options = get_open_invoice_options(db) if db is not None else []
     return templates.TemplateResponse(
         request=request,
         name="approver_upload_form.html",
@@ -328,7 +336,7 @@ def _render_approver_upload_page(
             "active_document": active_document,
             "success_message": success_message,
             "error_message": error_message,
-            "invoice_options": get_open_invoice_options(db),
+            "invoice_options": invoice_options,
             "form_invoice_number": (
                 form_invoice_number
                 if form_invoice_number is not None
