@@ -547,6 +547,7 @@
                         <th style="min-width: 100px;">Doc Type</th>
                         <th style="min-width: 130px;">Invoice Number</th>
                         <th style="min-width: 110px;">Qty / Price</th>
+                        <th style="min-width: 80px;">TC</th>
                         <th style="min-width: 150px;">Remarks</th>
                         <th style="min-width: 130px;">Attachment</th>
                         <th style="min-width: 100px;">Status</th>
@@ -578,6 +579,7 @@
                             </code>
                         </td>
                         <td style="font-size:.85rem;">{{ document.qty_price or "-" }}</td>
+                        <td style="font-size:.85rem;">{{ document.tc or "No" }}</td>
                         <td style="font-size:.82rem; color:var(--tf-muted);">{{ document.notes or "-" }}</td>
                         <td>
                             {% if document.files %}
@@ -605,6 +607,7 @@
                                     data-document-type="{{ document.document_type }}"
                                     data-invoice-number="{{ document.invoice_number }}"
                                     data-qty-price="{{ document.qty_price or '' }}"
+                                    data-tc="{{ document.tc or 'No' }}"
                                     data-status="{{ document.status_display }}"
                                     data-notes="{{ document.notes or '' }}"
                                 >
@@ -625,7 +628,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="tf-empty">
                                 <i class="bi bi-inbox"></i>
                                 <div>Belum ada data operational tracking.</div>
@@ -672,6 +675,14 @@
                 <div class="tf-form-group">
                     <label class="tf-label" for="edit_qty_price">Qty / Price</label>
                     <input class="tf-input" id="edit_qty_price" name="qty_price" required>
+                </div>
+                <div class="tf-form-group">
+                    <label class="tf-label" for="edit_tc">TC</label>
+                    <select class="tf-select" id="edit_tc" name="tc" required>
+                        {% for tc_option in allowed_tc_options %}
+                        <option value="{{ tc_option }}">{{ tc_option }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="tf-form-group full">
                     <label class="tf-label" for="edit_notes">Remarks</label>
@@ -950,7 +961,7 @@
     const editButtons = document.querySelectorAll('.js-edit-document');
     const deleteButtons = document.querySelectorAll('.js-delete-document');
  
-    function openEditModal(id, documentType, invoiceNumber, qtyPrice, status, notes) {
+    function openEditModal(id, documentType, invoiceNumber, qtyPrice, tc, status, notes) {
         const form = document.getElementById('editDocumentForm');
         if (form) form.action = '/dashboard/users/documents/' + id + '/edit';
         
@@ -958,12 +969,14 @@
         const elStatus = document.getElementById('edit_status');
         const elInvoice = document.getElementById('edit_invoice_number');
         const elQty = document.getElementById('edit_qty_price');
+        const elTc = document.getElementById('edit_tc');
         const elNotes = document.getElementById('edit_notes');
         
         if (elType) elType.value = documentType;
         if (elStatus) elStatus.value = status;
         if (elInvoice) elInvoice.value = invoiceNumber;
         if (elQty) elQty.value = qtyPrice;
+        if (elTc) elTc.value = tc || 'No';
         if (elNotes) elNotes.value = notes || '';
         
         if (editModal && editBackdrop) {
@@ -1011,6 +1024,7 @@
                 button.dataset.documentType,
                 button.dataset.invoiceNumber,
                 button.dataset.qtyPrice,
+                button.dataset.tc,
                 button.dataset.status,
                 button.dataset.notes
             );

@@ -13,6 +13,7 @@ from app.schemas.document_schema import DocumentSubmissionSchema
 from app.services.status_service import attach_display_status, to_database_status
 
 TERMINAL_DOCUMENT_STATUSES = {"APPROVED", "COMPLETED", "REJECTED"}
+ALLOWED_TC_OPTIONS = ("Yes", "No")
 
 
 def create_document(
@@ -42,6 +43,7 @@ def create_document(
         approver_id=approver_id,
         status=database_status,
         qty_price=document_data.qty_price,
+        tc=document_data.tc,
         notes=document_data.notes,
         submitted_at=timestamp,
         created_at=timestamp,
@@ -76,6 +78,16 @@ def find_open_document_by_invoice(
     return attach_display_status(document)
 
 
+def get_open_invoice_options(db: Session) -> list[Document]:
+    documents = (
+        db.query(Document)
+        .filter(~Document.status.in_(TERMINAL_DOCUMENT_STATUSES))
+        .order_by(Document.created_at.desc(), Document.id.desc())
+        .all()
+    )
+    return [attach_display_status(document) for document in documents]
+
+
 def assign_document_to_approver(
     db: Session,
     document: Document,
@@ -97,6 +109,7 @@ def update_document_details(
     document_type: str,
     invoice_number: str,
     qty_price: str,
+    tc: str,
     status: str,
     notes: str | None = None,
 ) -> Document | None:
@@ -125,6 +138,7 @@ def update_document_details(
     document.title = f"{document.document_type} Tracking"
     document.invoice_number = normalized_invoice_number
     document.qty_price = qty_price.strip()
+    document.tc = tc.strip()
     document.status = database_status
     document.notes = notes.strip() if notes else None
     document.updated_at = datetime.utcnow()

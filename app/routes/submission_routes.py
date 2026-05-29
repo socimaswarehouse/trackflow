@@ -14,10 +14,12 @@ from app.models.document import Document
 from app.schemas.document_schema import DocumentSubmissionSchema
 from app.services.approver_service import get_approver_by_slug
 from app.services.document_service import (
+    ALLOWED_TC_OPTIONS,
     assign_document_to_approver,
     attach_file_to_document,
     create_document,
     find_open_document_by_invoice,
+    get_open_invoice_options,
 )
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES, attach_display_status
 from app.services.user_service import get_user_by_id
@@ -60,6 +62,7 @@ async def submit_user_document(
     document_type: str = Form(...),
     invoice_number: str = Form(...),
     qty_price: str = Form(...),
+    tc: str = Form(...),
     status: str = Form(...),
     notes: str = Form(default=""),
     db: Session = Depends(get_db),
@@ -72,6 +75,7 @@ async def submit_user_document(
         "document_type": document_type.strip(),
         "invoice_number": invoice_number.strip(),
         "qty_price": qty_price.strip(),
+        "tc": tc.strip(),
         "status": status.strip(),
         "notes": notes.strip(),
     }
@@ -92,6 +96,7 @@ async def submit_user_document(
         document_type=cleaned_form_data["document_type"],
         invoice_number=cleaned_form_data["invoice_number"],
         qty_price=cleaned_form_data["qty_price"],
+        tc=cleaned_form_data["tc"],
         status=cleaned_form_data["status"],
         notes=cleaned_form_data["notes"] or None,
     )
@@ -297,6 +302,7 @@ def _render_user_submission_page(
             "active_document": active_document,
             "allowed_statuses": ALLOWED_DOCUMENT_STATUSES,
             "allowed_document_types": ALLOWED_DOCUMENT_TYPES,
+            "allowed_tc_options": ALLOWED_TC_OPTIONS,
             "success_message": success_message,
             "error_message": error_message,
             "form_data": form_data or _default_form_data(),
@@ -322,6 +328,7 @@ def _render_approver_upload_page(
             "active_document": active_document,
             "success_message": success_message,
             "error_message": error_message,
+            "invoice_options": get_open_invoice_options(db),
             "form_invoice_number": (
                 form_invoice_number
                 if form_invoice_number is not None
@@ -339,6 +346,7 @@ def _default_form_data() -> dict[str, str]:
         "document_type": "Invoice",
         "invoice_number": "",
         "qty_price": "",
+        "tc": "No",
         "status": "Pending",
         "notes": "",
     }
@@ -350,6 +358,7 @@ def _validate_document_submission(form_data: dict[str, str]) -> str | None:
             document_type=form_data["document_type"],
             invoice_number=form_data["invoice_number"],
             qty_price=form_data["qty_price"],
+            tc=form_data["tc"],
             status=form_data["status"],
             notes=form_data["notes"] or None,
         )
@@ -358,6 +367,9 @@ def _validate_document_submission(form_data: dict[str, str]) -> str | None:
 
     if document_data.document_type not in ALLOWED_DOCUMENT_TYPES:
         return "Document type must be Invoice or PAM."
+
+    if document_data.tc not in ALLOWED_TC_OPTIONS:
+        return "TC must be Yes or No."
 
     if document_data.status not in ALLOWED_DOCUMENT_STATUSES:
         return "Status must be Pending, Approved, or Rejected."

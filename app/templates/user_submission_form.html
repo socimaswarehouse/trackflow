@@ -301,6 +301,17 @@
                         >
                     </div>
 
+                    <div class="mb-3">
+                        <label for="tc" class="form-label">
+                            TC <span class="tf-required">*</span>
+                        </label>
+                        <select class="form-select" id="tc" name="tc" required>
+                            {% for tc_option in allowed_tc_options %}
+                            <option value="{{ tc_option }}" {% if form_data.tc == tc_option %}selected{% endif %}>{{ tc_option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <div class="tf-section-title">Document Status</div>
 
                     <div class="mb-3">

@@ -18,6 +18,7 @@ class Document(Base):
     approver_id = Column(Integer, ForeignKey("approvers.id"), nullable=True)
     status = Column(String(100), nullable=False)
     qty_price = Column(String(255), nullable=True)
+    tc = Column(String(3), nullable=False, default="No")
     amount = Column(Numeric(20, 2), nullable=True)
     currency = Column(String(3), nullable=True)
     notes = Column(Text, nullable=True)

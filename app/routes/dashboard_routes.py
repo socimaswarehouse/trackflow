@@ -16,6 +16,7 @@ from app.services.approver_service import (
 )
 from app.services.dashboard_service import get_dashboard_documents, get_dashboard_summary
 from app.services.document_service import (
+    ALLOWED_TC_OPTIONS,
     create_document,
     delete_document,
     update_document_details,
@@ -72,6 +73,7 @@ def get_dashboard(
             "selected_document_type": document_type,
             "allowed_statuses": ALLOWED_DOCUMENT_STATUSES,
             "allowed_document_types": ALLOWED_DOCUMENT_TYPES,
+            "allowed_tc_options": ALLOWED_TC_OPTIONS,
             "approval_stats": stats,
             **summary,
         },
@@ -113,6 +115,7 @@ def get_tracking_log(
             "selected_document_type": document_type,
             "allowed_statuses": ALLOWED_DOCUMENT_STATUSES,
             "allowed_document_types": ALLOWED_DOCUMENT_TYPES,
+            "allowed_tc_options": ALLOWED_TC_OPTIONS,
             **summary,
         },
     )
@@ -204,6 +207,7 @@ def get_user_qr_management(
             "selected_document_type": document_type,
             "allowed_statuses": ALLOWED_DOCUMENT_STATUSES,
             "allowed_document_types": ALLOWED_DOCUMENT_TYPES,
+            "allowed_tc_options": ALLOWED_TC_OPTIONS,
             "success_message": _build_user_qr_success_message(request),
             "error_message": request.query_params.get("error"),
             **summary,
@@ -251,6 +255,7 @@ def post_add_user_document(
     document_type: str = Form(...),
     invoice_number: str = Form(...),
     qty_price: str = Form(...),
+    tc: str = Form(...),
     status: str = Form(...),
     notes: str = Form(default=""),
     db: Session = Depends(get_db),
@@ -258,6 +263,7 @@ def post_add_user_document(
     cleaned_document_type = document_type.strip()
     cleaned_invoice_number = invoice_number.strip()
     cleaned_qty_price = qty_price.strip()
+    cleaned_tc = tc.strip()
     cleaned_status = status.strip()
     cleaned_notes = notes.strip()
 
@@ -270,6 +276,12 @@ def post_add_user_document(
     if cleaned_status not in ALLOWED_DOCUMENT_STATUSES:
         return RedirectResponse(
             url="/dashboard/users?error=Status must be Pending, Approved, or Rejected.",
+            status_code=303,
+        )
+
+    if cleaned_tc not in ALLOWED_TC_OPTIONS:
+        return RedirectResponse(
+            url="/dashboard/users?error=TC must be Yes or No.",
             status_code=303,
         )
 
@@ -291,6 +303,7 @@ def post_add_user_document(
         document_type=cleaned_document_type,
         invoice_number=cleaned_invoice_number,
         qty_price=cleaned_qty_price,
+        tc=cleaned_tc,
         status=cleaned_status,
         notes=cleaned_notes or None,
     )
@@ -319,6 +332,7 @@ def post_update_user_qr_document(
     document_type: str = Form(...),
     invoice_number: str = Form(...),
     qty_price: str = Form(...),
+    tc: str = Form(...),
     status: str = Form(...),
     notes: str = Form(default=""),
     db: Session = Depends(get_db),
@@ -326,6 +340,7 @@ def post_update_user_qr_document(
     cleaned_document_type = document_type.strip()
     cleaned_invoice_number = invoice_number.strip()
     cleaned_qty_price = qty_price.strip()
+    cleaned_tc = tc.strip()
     cleaned_status = status.strip()
     cleaned_notes = notes.strip()
 
@@ -338,6 +353,12 @@ def post_update_user_qr_document(
     if cleaned_status not in ALLOWED_DOCUMENT_STATUSES:
         return RedirectResponse(
             url="/dashboard/users?error=Status must be Pending, Approved, or Rejected.",
+            status_code=303,
+        )
+
+    if cleaned_tc not in ALLOWED_TC_OPTIONS:
+        return RedirectResponse(
+            url="/dashboard/users?error=TC must be Yes or No.",
             status_code=303,
         )
 
@@ -354,6 +375,7 @@ def post_update_user_qr_document(
             document_type=cleaned_document_type,
             invoice_number=cleaned_invoice_number,
             qty_price=cleaned_qty_price,
+            tc=cleaned_tc,
             status=cleaned_status,
             notes=cleaned_notes or None,
         )

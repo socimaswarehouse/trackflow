@@ -315,15 +315,19 @@
                         <label for="invoice_number" class="tf-form-label">
                             Invoice Number <span class="tf-required">*</span>
                         </label>
-                        <input
-                            type="text"
+                        <select
                             class="tf-input"
                             id="invoice_number"
                             name="invoice_number"
-                            value="{{ form_invoice_number }}"
                             required
-                            autocomplete="off"
                         >
+                            <option value="">Pilih Invoice Number</option>
+                            {% for document in invoice_options %}
+                            <option value="{{ document.invoice_number }}" {% if form_invoice_number == document.invoice_number %}selected{% endif %}>
+                                {{ document.invoice_number }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="tf-upload-card">

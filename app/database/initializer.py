@@ -64,6 +64,13 @@ def _sync_additive_columns() -> None:
             "AFTER status"
         )
 
+    if "tc" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN tc VARCHAR(3) NOT NULL DEFAULT 'No' "
+            "AFTER qty_price"
+        )
+
     if not statements:
         return
 

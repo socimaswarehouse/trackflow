@@ -32,6 +32,7 @@ def get_dashboard_documents(
                 Document.invoice_number.ilike(like_query),
                 Document.document_type.ilike(like_query),
                 Document.qty_price.ilike(like_query),
+                Document.tc.ilike(like_query),
                 Document.notes.ilike(like_query),
                 Approver.approval_name.ilike(like_query),
             )

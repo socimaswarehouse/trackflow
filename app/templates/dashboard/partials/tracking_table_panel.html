@@ -65,6 +65,7 @@
                     <th style="min-width: 100px;">Doc Type</th>
                     <th style="min-width: 130px;">Invoice Number</th>
                     <th style="min-width: 110px;">Qty / Price</th>
+                    <th style="min-width: 80px;">TC</th>
                     <th style="min-width: 150px;">Remarks</th>
                     <th style="min-width: 130px;">Attachment</th>
                     <th style="min-width: 100px;">Status</th>
@@ -97,6 +98,7 @@
                         </code>
                     </td>
                     <td style="font-size:.85rem; min-width: 110px;">{{ document.qty_price or "-" }}</td>
+                    <td style="font-size:.85rem; min-width: 80px;">{{ document.tc or "No" }}</td>
                     <td style="font-size:.82rem; color:var(--tf-muted); min-width: 150px;">
                         {{ document.notes or "-" }}
                     </td>
@@ -120,7 +122,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                         <div class="tf-empty">
                             <i class="bi bi-inbox"></i>
                             <div>No documents found. Submit via QR scan to start tracking.</div>
