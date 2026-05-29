@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.config import get_base_url
 from app.models.approver import Approver
 from app.models.document import Document
+from app.models.status_log import StatusLog
 from app.models.user import User
 from app.utils.slug_generator import generate_slug
 
@@ -102,18 +103,39 @@ def delete_approver(db: Session, slug: str, delete_documents: bool = False) -> N
             Document.approver_id == approver.id
         ).update({"approver_id": None})
 
-    if approver.user_id:
-        user = db.query(User).filter(User.id == approver.user_id).first()
+    user_id = approver.user_id
+    db.delete(approver)
+    db.flush()
+
+    if user_id and _can_delete_user(db, user_id):
+        user = db.query(User).filter(User.id == user_id).first()
         if user:
             db.delete(user)
-
-    db.delete(approver)
 
     try:
         db.commit()
     except Exception:
         db.rollback()
         raise ValueError("Gagal menghapus approver karena kendala database.")
+
+
+def _can_delete_user(db: Session, user_id: int) -> bool:
+    has_submitted_documents = (
+        db.query(Document.id)
+        .filter(Document.submitter_id == user_id)
+        .first()
+        is not None
+    )
+    if has_submitted_documents:
+        return False
+
+    has_status_logs = (
+        db.query(StatusLog.id)
+        .filter(StatusLog.changed_by == user_id)
+        .first()
+        is not None
+    )
+    return not has_status_logs
 
 
 def update_approver_qr_path(
