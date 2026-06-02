@@ -138,14 +138,18 @@ def attach_display_status(document: Document) -> Document:
         document.qty_price_clean = ""
     
     # 1. Invoice display helper (for multiple invoice numbers)
+    document.invoice_list_parsed = []
     if document.invoice_number:
         try:
             invs = json.loads(document.invoice_number)
             if isinstance(invs, list):
+                document.invoice_list_parsed = invs
                 document.invoice_display = ", ".join(invs)
             else:
+                document.invoice_list_parsed = [str(document.invoice_number)]
                 document.invoice_display = str(document.invoice_number)
         except Exception:
+            document.invoice_list_parsed = [str(document.invoice_number)]
             document.invoice_display = str(document.invoice_number)
     else:
         document.invoice_display = ""
@@ -164,10 +168,11 @@ def attach_display_status(document: Document) -> Document:
                     for charge, val in details.items():
                         if isinstance(val, dict) and val.get("checked"):
                             amt = val.get("amount", "")
+                            charge_name = val.get("custom_name") or val.get("label") or charge.capitalize()
                             amt_str = f" ({amt})" if amt else ""
-                            details_list.append(f"{charge.capitalize()}{amt_str}")
+                            details_list.append(f"{charge_name}{amt_str}")
                             document.tc_charges_list.append({
-                                "name": charge.capitalize(),
+                                "name": charge_name,
                                 "amount": amt
                             })
             except Exception:

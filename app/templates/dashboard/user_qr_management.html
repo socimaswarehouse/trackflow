@@ -547,7 +547,6 @@
                         <th style="min-width: 150px;">PAM Number</th>
                         <th style="min-width: 160px;">Invoice Number</th>
                         <th style="min-width: 110px;">Qty / Price</th>
-                        <th style="min-width: 120px;">TC</th>
                         <th style="min-width: 150px;">Remarks</th>
                         <th style="min-width: 130px;">Attachment</th>
                         <th style="min-width: 100px;">Status</th>
@@ -582,10 +581,75 @@
                             {% endif %}
                         </td>
                         <td style="min-width: 160px;">
-                            {% if document.invoice_display or document.invoice_number %}
-                                <code style="font-size:.82rem; background:#f1f5f9; padding:.15rem .4rem; border-radius:.25rem; word-break: break-all; color: var(--tf-primary-mid);">
-                                    {{ document.invoice_display or document.invoice_number }}
-                                </code>
+                            {% if document.invoice_list_parsed %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for invoice in document.invoice_list_parsed %}
+                                        {% if document.tc == "Yes" %}
+                                            <button type="button"
+                                                    class="btn p-0 border-0"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#shipmentDetailsModal{{ document.id }}{{ loop.index }}"
+                                                    style="background: transparent; line-height: 1;"
+                                                    onclick="event.stopPropagation();">
+                                                <code style="font-size:.82rem; background:#f1f5f9; padding:.15rem .4rem; border-radius:.25rem; word-break: break-all; color: var(--tf-primary-mid);">
+                                                    {{ invoice }}
+                                                </code>
+                                            </button>
+                                            <div class="modal fade" id="shipmentDetailsModal{{ document.id }}{{ loop.index }}" tabindex="-1" aria-labelledby="shipmentDetailsModal{{ document.id }}{{ loop.index }}Label" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="shipmentDetailsModal{{ document.id }}{{ loop.index }}Label">Detail Shipment ({{ invoice }})</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
+                                                                <i class="bi bi-box-seam text-primary"></i>
+                                                                <strong>Shipment Type:</strong>
+                                                                <span class="ms-auto text-end">{{ document.tc_type or '-' }}</span>
+                                                            </div>
+                                                            <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
+                                                                <i class="bi bi-ship text-primary"></i>
+                                                                <strong>Vessel:</strong>
+                                                                <span class="ms-auto text-end">{{ document.vessel_name or '-' }}</span>
+                                                            </div>
+                                                            {% if document.tc_type == "Import" %}
+                                                                <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
+                                                                    <i class="bi bi-file-earmark-text text-primary"></i>
+                                                                    <strong>No BL:</strong>
+                                                                    <span class="ms-auto text-end">{{ document.kode_bl or '-' }}</span>
+                                                                </div>
+                                                            {% elif document.tc_type == "Export" %}
+                                                                <div class="mb-2 pb-2 border-bottom">
+                                                                    <i class="bi bi-file-earmark-binary text-primary"></i>
+                                                                    <strong>No SI:</strong>
+                                                                    <div class="text-muted mt-1" style="font-size: 0.85rem; word-break: break-word;">
+                                                                        {{ document.no_si_list_parsed|join(', ') if document.no_si_list_parsed else '-' }}
+                                                                    </div>
+                                                                </div>
+                                                            {% endif %}
+                                                            {% if document.tc_charges_list %}
+                                                                <div class="mt-3 mb-2"><strong>Sub-charges:</strong></div>
+                                                                <ul class="list-unstyled ps-0 mb-0">
+                                                                    {% for charge in document.tc_charges_list %}
+                                                                        <li class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded">
+                                                                            <span class="text-muted">{{ charge.name }}</span>
+                                                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ charge.amount or '-' }}</span>
+                                                                        </li>
+                                                                    {% endfor %}
+                                                                </ul>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <code style="font-size:.82rem; background:#f1f5f9; padding:.15rem .4rem; border-radius:.25rem; word-break: break-all; color: var(--tf-primary-mid);">
+                                                {{ invoice }}
+                                            </code>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
                             {% else %}
                                 <span style="color:#cbd5e1;">-</span>
                             {% endif %}
@@ -597,62 +661,6 @@
                                 </span>
                                 {{ document.qty_price_clean }}
                             {% else %}-{% endif %}
-                        </td>
-                        <td style="font-size:.85rem; min-width: 120px;">
-                            {% if document.tc == "Yes" %}
-                                <button type="button" 
-                                        class="btn badge text-success bg-success-subtle border border-success-subtle py-1.5 px-2.5 rounded-pill d-inline-flex align-items-center gap-1"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#tcDetailsModal{{ document.id }}"
-                                        style="cursor: pointer; font-size: 0.72rem; transition: transform 0.15s ease;"
-                                        onmouseover="this.style.transform='scale(1.05)';"
-                                        onmouseout="this.style.transform='scale(1)';"
-                                        onclick="event.stopPropagation();">
-                                    Yes
-                                </button>
-                                <div class="modal fade" id="tcDetailsModal{{ document.id }}" tabindex="-1" aria-labelledby="tcDetailsModal{{ document.id }}Label" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="tcDetailsModal{{ document.id }}Label">TC Details ({{ document.tc_type or 'Export' }})</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
-                                                    <i class="bi bi-ship text-primary"></i>
-                                                    <strong>Vessel:</strong>
-                                                    <span class="ms-auto text-end">{{ document.vessel_name or '-' }}</span>
-                                                </div>
-                                                <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
-                                                    <i class="bi bi-file-earmark-text text-primary"></i>
-                                                    <strong>Kode BL:</strong>
-                                                    <span class="ms-auto text-end">{{ document.kode_bl or '-' }}</span>
-                                                </div>
-                                                <div class="mb-2 pb-2 border-bottom">
-                                                    <i class="bi bi-file-earmark-binary text-primary"></i>
-                                                    <strong>No SI:</strong>
-                                                    <div class="text-muted mt-1" style="font-size: 0.85rem; word-break: break-word;">
-                                                        {{ document.no_si_list_parsed|join(', ') if document.no_si_list_parsed else '-' }}
-                                                    </div>
-                                                </div>
-                                                {% if document.tc_charges_list %}
-                                                    <div class="mt-3 mb-2"><strong>Charges:</strong></div>
-                                                    <ul class="list-unstyled ps-0 mb-0">
-                                                        {% for charge in document.tc_charges_list %}
-                                                            <li class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded">
-                                                                <span class="text-muted">{{ charge.name }}</span>
-                                                                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ charge.amount or '-' }}</span>
-                                                            </li>
-                                                        {% endfor %}
-                                                    </ul>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% else %}
-                                No
-                            {% endif %}
                         </td>
                         <td style="font-size:.82rem; color:var(--tf-muted);">{{ document.notes or "-" }}</td>
                         <td>
@@ -703,7 +711,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="10">
+                        <td colspan="9">
                             <div class="tf-empty">
                                 <i class="bi bi-inbox"></i>
                                 <div>Belum ada data operational tracking.</div>

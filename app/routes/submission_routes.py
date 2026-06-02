@@ -78,12 +78,12 @@ async def submit_user_document(
     
     qty_price = form_data.get("qty_price", "").strip()
     qty_currency = form_data.get("qty_currency", "IDR").strip()
-    tc = form_data.get("tc", "No").strip()
+    tc_type_val = form_data.get("tc_type", "").strip()
+    tc = "Yes" if tc_type_val in ("Import", "Export") else "No"
     status = form_data.get("status", "Pending").strip()
     notes = form_data.get("notes", "").strip()
     
     # Extract TC fields
-    tc_type_val = None
     tc_details_json = None
     tc_details_dict = {}
     kode_bl_val = None
@@ -94,35 +94,65 @@ async def submit_user_document(
     if tc == "Yes":
         tc_type_val = form_data.get("tc_type", "").strip()
         if tc_type_val == "Import":
-            tc_details_dict["empty"] = {
-                "checked": "tc_import_empty" in form_data,
-                "amount": form_data.get("tc_import_empty_amount", "").strip()
-            }
-            tc_details_dict["handling"] = {
-                "checked": "tc_import_handling" in form_data,
-                "amount": form_data.get("tc_import_handling_amount", "").strip()
-            }
+            import_charge_options = (
+                ("lift_on_empty", "LIFT ON EMPTY"),
+                ("jasa_pelayanan_kepelabuhan", "JASA PELAYANAN KEPELABUHAN"),
+                ("handling_dokumen_30", "HANDLING DOKUMEN 3.0"),
+                ("jasa_emkl", "JASA EMKL"),
+                ("fuel_surcharge", "FUEL SURCHARGE"),
+                ("pemeriksaan_fisik_barang", "PEMERIKSAAN FISIK BARANG"),
+                ("pengurusan_dokumen_jalur_merah", "PENGURUSAN DOKUMEN JALUR MERAH"),
+                ("adm_closing_time", "ADM CLOSING TIME"),
+                ("denda_alih_kapal", "DENDA ALIH KAPAL"),
+                ("additional_handling_pindah_kapal", "ADDITIONAL HANDLING - PINDAH KAPAL"),
+                ("additional_handling_pindah_kapal_batal_muat", "ADDITIONAL HANDLING - PINDAH KAPAL BATAL MUAT"),
+                ("pindah_kapal_batal_muat_pkbm", "PINDAH KAPAL BATAL MUAT (PKBM)"),
+            )
+            for charge_key, charge_label in import_charge_options:
+                field_name = f"tc_import_{charge_key}"
+                tc_details_dict[charge_key] = {
+                    "checked": field_name in form_data,
+                    "label": charge_label,
+                    "amount": form_data.get(f"{field_name}_amount", "").strip()
+                }
             tc_details_dict["other"] = {
                 "checked": "tc_import_other" in form_data,
+                "label": "Other",
+                "custom_name": form_data.get("tc_import_other_name", "").strip(),
                 "amount": form_data.get("tc_import_other_amount", "").strip()
             }
         elif tc_type_val == "Export":
-            tc_details_dict["cleaning"] = {
-                "checked": "tc_export_cleaning" in form_data,
-                "amount": form_data.get("tc_export_cleaning_amount", "").strip()
-            }
-            tc_details_dict["handling"] = {
-                "checked": "tc_export_handling" in form_data,
-                "amount": form_data.get("tc_export_handling_amount", "").strip()
-            }
+            export_charge_options = (
+                ("lift_off_empty", "LIFT OFF EMPTY"),
+                ("jasa_pelayanan_kepelabuhanan", "JASA PELAYANAN KEPELABUHANAN"),
+                ("handling_dokumen_23_handling_container", "HANDLING DOKUMEN 2.3,HANDLING CONTAINER"),
+                ("handling_bc25_hijau_kuning", "HANDLING BC.2.5 JALUR HIJAU / KUNING"),
+                ("handling_bc41_hijau_kuning", "HANDLING BC 4.1 JALUR HIJAU / KUNING"),
+                ("handling_bc40", "HANDLING BC 4.0"),
+                ("handling_bc25_jalur_merah", "HANDLING BC 2.5 JALUR MERAH"),
+                ("cargo_storage", "CARGO STORAGE"),
+            )
+            for charge_key, charge_label in export_charge_options:
+                field_name = f"tc_export_{charge_key}"
+                tc_details_dict[charge_key] = {
+                    "checked": field_name in form_data,
+                    "label": charge_label,
+                    "amount": form_data.get(f"{field_name}_amount", "").strip()
+                }
             tc_details_dict["other"] = {
                 "checked": "tc_export_other" in form_data,
+                "label": "Other",
+                "custom_name": form_data.get("tc_export_other_name", "").strip(),
                 "amount": form_data.get("tc_export_other_amount", "").strip()
             }
         tc_details_json = json.dumps(tc_details_dict)
-        kode_bl_val = form_data.get("kode_bl", "").strip()
-        no_si_list = [si.strip() for si in form_data.getlist("no_si") if si.strip()]
-        no_si_val = json.dumps(no_si_list)
+        if tc_type_val == "Import":
+            kode_bl_val = form_data.get("kode_bl", "").strip()
+            no_si_val = json.dumps([])
+        elif tc_type_val == "Export":
+            kode_bl_val = None
+            no_si_list = [si.strip() for si in form_data.getlist("no_si") if si.strip()]
+            no_si_val = json.dumps(no_si_list)
         vessel_name_val = form_data.get("vessel_name", "").strip()
         
     cleaned_form_data = {
@@ -481,17 +511,19 @@ def _validate_document_submission(form_data: dict[str, any]) -> str | None:
 
     if document_data.tc == "Yes":
         if document_data.tc_type not in ("Export", "Import"):
-            return "Please select Import or Export for TC option."
-        if not document_data.kode_bl or not document_data.kode_bl.strip():
-            return "Kode BL is required when TC is Yes."
-        try:
-            si_list = json.loads(document_data.no_si) if document_data.no_si else []
-            if not si_list or not any(si.strip() for si in si_list):
-                return "At least one No SI is required when TC is Yes."
-        except Exception:
-            return "No SI must be a valid list."
+            return "Please select Import or Export for Shipment Type."
+        if document_data.tc_type == "Import":
+            if not document_data.kode_bl or not document_data.kode_bl.strip():
+                return "No BL is required when Shipment Type is Import."
+        if document_data.tc_type == "Export":
+            try:
+                si_list = json.loads(document_data.no_si) if document_data.no_si else []
+                if not si_list or not any(si.strip() for si in si_list):
+                    return "At least one No SI is required when Shipment Type is Export."
+            except Exception:
+                return "No SI must be a valid list."
         if not document_data.vessel_name or not document_data.vessel_name.strip():
-            return "Vessel Name is required when TC is Yes."
+            return "Vessel Name is required when Shipment Type is selected."
 
     if document_data.status not in ALLOWED_DOCUMENT_STATUSES:
         return "Status must be Pending, Approved, or Rejected."
