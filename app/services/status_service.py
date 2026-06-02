@@ -1,6 +1,7 @@
 """Document tracking and status workflow services."""
 
 from datetime import datetime
+import json
 
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -118,6 +119,82 @@ def to_display_status(status: str | None) -> str:
 
 def attach_display_status(document: Document) -> Document:
     document.status_display = to_display_status(document.status)
+    
+    # Timezone conversion helper (UTC to UTC+7 WIB)
+    from datetime import timedelta
+    if document.created_at:
+        document.created_at_local = document.created_at + timedelta(hours=7)
+    else:
+        document.created_at_local = None
+
+    # Qty/Price clean display helper
+    if document.qty_price:
+        val = document.qty_price.strip()
+        for prefix in ["IDR", "USD", "RP"]:
+            if val.upper().startswith(prefix):
+                val = val[len(prefix):].strip()
+        document.qty_price_clean = val
+    else:
+        document.qty_price_clean = ""
+    
+    # 1. Invoice display helper (for multiple invoice numbers)
+    if document.invoice_number:
+        try:
+            invs = json.loads(document.invoice_number)
+            if isinstance(invs, list):
+                document.invoice_display = ", ".join(invs)
+            else:
+                document.invoice_display = str(document.invoice_number)
+        except Exception:
+            document.invoice_display = str(document.invoice_number)
+    else:
+        document.invoice_display = ""
+        
+    # 2. TC Details display helper & structured details
+    document.tc_details_display = ""
+    document.tc_charges_list = []
+    document.no_si_list_parsed = []
+    
+    if document.tc == "Yes":
+        details_list = []
+        if document.tc_details:
+            try:
+                details = json.loads(document.tc_details)
+                if isinstance(details, dict):
+                    for charge, val in details.items():
+                        if isinstance(val, dict) and val.get("checked"):
+                            amt = val.get("amount", "")
+                            amt_str = f" ({amt})" if amt else ""
+                            details_list.append(f"{charge.capitalize()}{amt_str}")
+                            document.tc_charges_list.append({
+                                "name": charge.capitalize(),
+                                "amount": amt
+                            })
+            except Exception:
+                pass
+        
+        if document.kode_bl:
+            details_list.append(f"BL: {document.kode_bl}")
+            
+        if document.no_si:
+            try:
+                si_list = json.loads(document.no_si)
+                if isinstance(si_list, list):
+                    details_list.append(f"SI: {', '.join(si_list)}")
+                    document.no_si_list_parsed = si_list
+                else:
+                    details_list.append(f"SI: {document.no_si}")
+                    document.no_si_list_parsed = [document.no_si]
+            except Exception:
+                details_list.append(f"SI: {document.no_si}")
+                document.no_si_list_parsed = [document.no_si]
+                
+        if document.vessel_name:
+            details_list.append(f"Vessel: {document.vessel_name}")
+                
+        if details_list:
+            document.tc_details_display = " | ".join(details_list)
+            
     return document
 
 

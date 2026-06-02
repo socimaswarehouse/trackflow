@@ -1,8 +1,10 @@
 """Document service operations."""
 
 from datetime import datetime
+import json
 from pathlib import Path
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.approver import Approver
@@ -21,6 +23,7 @@ def create_document(
     submitter_id: int,
     document_data: DocumentSubmissionSchema,
     approver_id: int | None = None,
+    currency: str | None = None,
 ) -> Document:
     existing_document = find_open_document_by_invoice(
         db,
@@ -43,7 +46,15 @@ def create_document(
         approver_id=approver_id,
         status=database_status,
         qty_price=document_data.qty_price,
+        currency=currency or "IDR",
         tc=document_data.tc,
+        pam_number=document_data.pam_number,
+        invoice_numbers_json=document_data.invoice_numbers_json,
+        tc_type=document_data.tc_type,
+        tc_details=document_data.tc_details,
+        kode_bl=document_data.kode_bl,
+        no_si=document_data.no_si,
+        vessel_name=document_data.vessel_name,
         notes=document_data.notes,
         submitted_at=timestamp,
         created_at=timestamp,
@@ -65,9 +76,28 @@ def find_open_document_by_invoice(
     if not normalized_invoice_number:
         return None
 
+    # Determine if invoice_number is a JSON array string or a single invoice number
+    try:
+        invoices = json.loads(normalized_invoice_number)
+        if not isinstance(invoices, list):
+            invoices = [normalized_invoice_number]
+    except Exception:
+        invoices = [normalized_invoice_number]
+
+    filters = []
+    for inv in invoices:
+        inv_stripped = inv.strip()
+        if inv_stripped:
+            # Match exact match (legacy/plain) or element inside JSON array string
+            filters.append(Document.invoice_number == inv_stripped)
+            filters.append(Document.invoice_number.like(f'%"{inv_stripped}"%'))
+
+    if not filters:
+        return None
+
     document = (
         db.query(Document)
-        .filter(Document.invoice_number == normalized_invoice_number)
+        .filter(or_(*filters))
         .filter(~Document.status.in_(TERMINAL_DOCUMENT_STATUSES))
         .order_by(Document.created_at.desc(), Document.id.desc())
         .first()
@@ -112,6 +142,7 @@ def update_document_details(
     tc: str,
     status: str,
     notes: str | None = None,
+    currency: str | None = None,
 ) -> Document | None:
     document = (
         db.query(Document)
@@ -138,6 +169,7 @@ def update_document_details(
     document.title = f"{document.document_type} Tracking"
     document.invoice_number = normalized_invoice_number
     document.qty_price = qty_price.strip()
+    document.currency = currency or document.currency or "IDR"
     document.tc = tc.strip()
     document.status = database_status
     document.notes = notes.strip() if notes else None

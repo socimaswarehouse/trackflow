@@ -71,6 +71,55 @@ def _sync_additive_columns() -> None:
             "AFTER qty_price"
         )
 
+    if "pam_number" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN pam_number VARCHAR(100) NULL "
+            "AFTER tc"
+        )
+
+    if "invoice_numbers_json" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN invoice_numbers_json TEXT NULL "
+            "AFTER pam_number"
+        )
+
+    if "tc_type" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN tc_type VARCHAR(10) NULL "
+            "AFTER invoice_numbers_json"
+        )
+
+    if "tc_details" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN tc_details TEXT NULL "
+            "AFTER tc_type"
+        )
+
+    if "kode_bl" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN kode_bl VARCHAR(255) NULL "
+            "AFTER tc_details"
+        )
+
+    if "no_si" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN no_si TEXT NULL "
+            "AFTER kode_bl"
+        )
+
+    if "vessel_name" not in existing_columns:
+        statements.append(
+            "ALTER TABLE documents "
+            "ADD COLUMN vessel_name VARCHAR(255) NULL "
+            "AFTER no_si"
+        )
+
     if not statements:
         return
 

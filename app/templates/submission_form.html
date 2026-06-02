@@ -549,20 +549,32 @@
 
                     <!-- Qty Price -->
                     <div class="mb-3">
-                        <label for="qty_price" class="form-label">
+                        <label for="qty_price_display" class="form-label">
                             Qty / Price <span class="tf-required" aria-hidden="true">*</span>
                         </label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="qty_price"
-                            name="qty_price"
-                            placeholder="e.g. 12 x Rp 250.000"
-                            value="{{ form_data.qty_price if form_data else '' }}"
-                            required
-                            aria-required="true"
-                            autocomplete="off"
-                        >
+                        <div class="input-group">
+                            <select
+                                class="form-select"
+                                id="qty_currency"
+                                name="qty_currency"
+                                style="max-width: 80px; border-right: none;"
+                            >
+                                <option value="IDR" selected>IDR</option>
+                                <option value="USD">USD</option>
+                            </select>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="qty_price_display"
+                                name="qty_price"
+                                value="{{ form_data.qty_price if form_data else '' }}"
+                                required
+                                aria-required="true"
+                                autocomplete="off"
+                                inputmode="numeric"
+                                style="border-left: none;"
+                            >
+                        </div>
                         <div class="invalid-feedback">Qty / Price is required.</div>
                     </div>
 
@@ -684,6 +696,37 @@
     ></script>
 
     <script>
+    // ── Qty/Price Auto-format (thousands) ──────────────────────────────
+    (function() {
+        const qtyInput   = document.getElementById('qty_price_display');
+        const currSelect = document.getElementById('qty_currency');
+        if (!qtyInput || !currSelect) return;
+
+        function getRaw(val) { return val.replace(/[^\d]/g, ''); }
+        function fmtIDR(r)   { return r ? r.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''; }
+        function fmtUSD(r)   { return r ? r.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''; }
+
+        function applyFormat() {
+            const caret   = qtyInput.selectionStart;
+            const prevLen = qtyInput.value.length;
+            const raw     = getRaw(qtyInput.value);
+            const fmt     = currSelect.value === 'USD' ? fmtUSD(raw) : fmtIDR(raw);
+            qtyInput.value = fmt;
+            const diff = fmt.length - prevLen;
+            qtyInput.setSelectionRange(caret + diff, caret + diff);
+        }
+
+        qtyInput.addEventListener('input', applyFormat);
+        currSelect.addEventListener('change', function() {
+            const raw = getRaw(qtyInput.value);
+            qtyInput.value = currSelect.value === 'USD' ? fmtUSD(raw) : fmtIDR(raw);
+        });
+        if (qtyInput.value) {
+            const raw = getRaw(qtyInput.value);
+            qtyInput.value = currSelect.value === 'USD' ? fmtUSD(raw) : fmtIDR(raw);
+        }
+    })();
+
     (function () {
         "use strict";
 

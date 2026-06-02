@@ -1,5 +1,6 @@
 """Submission routes for QR-based operational document tracking."""
 
+import json
 import uuid
 from pathlib import Path
 
@@ -59,25 +60,94 @@ def get_user_submission_page(
 async def submit_user_document(
     request: Request,
     user_id: int,
-    document_type: str = Form(...),
-    invoice_number: str = Form(...),
-    qty_price: str = Form(...),
-    tc: str = Form(...),
-    status: str = Form(...),
-    notes: str = Form(default=""),
     db: Session = Depends(get_db),
 ):
     user = get_user_by_id(db, user_id)
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
+    form_data = await request.form()
+    
+    # Extract & sanitize PAM number
+    pam_number = form_data.get("pam_number", "").strip()
+    
+    # Extract multiple invoice numbers
+    invoice_numbers = form_data.getlist("invoice_number")
+    invoices = [inv.strip() for inv in invoice_numbers if inv.strip()]
+    invoice_number_str = json.dumps(invoices)
+    
+    qty_price = form_data.get("qty_price", "").strip()
+    qty_currency = form_data.get("qty_currency", "IDR").strip()
+    tc = form_data.get("tc", "No").strip()
+    status = form_data.get("status", "Pending").strip()
+    notes = form_data.get("notes", "").strip()
+    
+    # Extract TC fields
+    tc_type_val = None
+    tc_details_json = None
+    tc_details_dict = {}
+    kode_bl_val = None
+    no_si_val = None
+    no_si_list = []
+    vessel_name_val = None
+    
+    if tc == "Yes":
+        tc_type_val = form_data.get("tc_type", "").strip()
+        if tc_type_val == "Import":
+            tc_details_dict["empty"] = {
+                "checked": "tc_import_empty" in form_data,
+                "amount": form_data.get("tc_import_empty_amount", "").strip()
+            }
+            tc_details_dict["handling"] = {
+                "checked": "tc_import_handling" in form_data,
+                "amount": form_data.get("tc_import_handling_amount", "").strip()
+            }
+            tc_details_dict["other"] = {
+                "checked": "tc_import_other" in form_data,
+                "amount": form_data.get("tc_import_other_amount", "").strip()
+            }
+        elif tc_type_val == "Export":
+            tc_details_dict["cleaning"] = {
+                "checked": "tc_export_cleaning" in form_data,
+                "amount": form_data.get("tc_export_cleaning_amount", "").strip()
+            }
+            tc_details_dict["handling"] = {
+                "checked": "tc_export_handling" in form_data,
+                "amount": form_data.get("tc_export_handling_amount", "").strip()
+            }
+            tc_details_dict["other"] = {
+                "checked": "tc_export_other" in form_data,
+                "amount": form_data.get("tc_export_other_amount", "").strip()
+            }
+        tc_details_json = json.dumps(tc_details_dict)
+        kode_bl_val = form_data.get("kode_bl", "").strip()
+        no_si_list = [si.strip() for si in form_data.getlist("no_si") if si.strip()]
+        no_si_val = json.dumps(no_si_list)
+        vessel_name_val = form_data.get("vessel_name", "").strip()
+        
     cleaned_form_data = {
-        "document_type": document_type.strip(),
-        "invoice_number": invoice_number.strip(),
-        "qty_price": qty_price.strip(),
-        "tc": tc.strip(),
-        "status": status.strip(),
-        "notes": notes.strip(),
+        "document_type": "PAM",
+        "invoice_number": invoice_number_str,
+        "qty_price": qty_price,
+        "qty_currency": qty_currency,
+        "tc": tc,
+        "status": status,
+        "notes": notes,
+        "pam_number": pam_number,
+        "invoice_numbers_json": invoice_number_str,
+        "tc_type": tc_type_val,
+        "tc_details": tc_details_json,
+        "kode_bl": kode_bl_val,
+        "no_si": no_si_val,
+        "vessel_name": vessel_name_val,
+    }
+
+    # Pass raw forms for ease of re-rendering in case of validation errors
+    form_data_for_render = {
+        **cleaned_form_data,
+        "invoice_list": invoices if invoices else [""],
+        "tc_details_dict": tc_details_dict,
+        "no_si_list": no_si_list if no_si_list else [""],
     }
 
     validation_error = _validate_document_submission(cleaned_form_data)
@@ -88,7 +158,7 @@ async def submit_user_document(
             active_document=_get_user_active_document(request, db, user.id),
             success_message=None,
             error_message=validation_error,
-            form_data=cleaned_form_data,
+            form_data=form_data_for_render,
             status_code=422,
         )
 
@@ -99,6 +169,13 @@ async def submit_user_document(
         tc=cleaned_form_data["tc"],
         status=cleaned_form_data["status"],
         notes=cleaned_form_data["notes"] or None,
+        pam_number=cleaned_form_data["pam_number"],
+        invoice_numbers_json=cleaned_form_data["invoice_numbers_json"],
+        tc_type=cleaned_form_data["tc_type"],
+        tc_details=cleaned_form_data["tc_details"],
+        kode_bl=cleaned_form_data["kode_bl"],
+        no_si=cleaned_form_data["no_si"],
+        vessel_name=cleaned_form_data["vessel_name"],
     )
 
     try:
@@ -106,6 +183,7 @@ async def submit_user_document(
             db=db,
             submitter_id=user.id,
             document_data=document_data,
+            currency=cleaned_form_data.get("qty_currency", "IDR"),
         )
     except ValueError as exc:
         return _render_user_submission_page(
@@ -114,7 +192,7 @@ async def submit_user_document(
             active_document=_get_user_active_document(request, db, user.id),
             success_message=None,
             error_message=str(exc),
-            form_data=cleaned_form_data,
+            form_data=form_data_for_render,
             status_code=422,
         )
 
@@ -297,7 +375,7 @@ def _render_user_submission_page(
     active_document: Document | None,
     success_message: str | None,
     error_message: str | None,
-    form_data: dict[str, str] | None = None,
+    form_data: dict[str, any] | None = None,
     status_code: int = 200,
 ):
     return templates.TemplateResponse(
@@ -349,18 +427,25 @@ def _render_approver_upload_page(
     )
 
 
-def _default_form_data() -> dict[str, str]:
+def _default_form_data() -> dict[str, any]:
     return {
-        "document_type": "Invoice",
+        "document_type": "PAM",
         "invoice_number": "",
         "qty_price": "",
         "tc": "No",
         "status": "Pending",
         "notes": "",
+        "pam_number": "",
+        "invoice_list": [""],
+        "tc_type": "",
+        "tc_details_dict": {},
+        "kode_bl": "",
+        "no_si_list": [""],
+        "vessel_name": "",
     }
 
 
-def _validate_document_submission(form_data: dict[str, str]) -> str | None:
+def _validate_document_submission(form_data: dict[str, any]) -> str | None:
     try:
         document_data = DocumentSubmissionSchema(
             document_type=form_data["document_type"],
@@ -369,15 +454,44 @@ def _validate_document_submission(form_data: dict[str, str]) -> str | None:
             tc=form_data["tc"],
             status=form_data["status"],
             notes=form_data["notes"] or None,
+            pam_number=form_data.get("pam_number"),
+            invoice_numbers_json=form_data.get("invoice_numbers_json"),
+            tc_type=form_data.get("tc_type"),
+            tc_details=form_data.get("tc_details"),
+            kode_bl=form_data.get("kode_bl"),
+            no_si=form_data.get("no_si"),
+            vessel_name=form_data.get("vessel_name"),
         )
     except ValidationError:
-        return "Document type, invoice number, qty price, and status are required."
+        return "PAM Number, Invoice Number, Qty/Price, and Status are required."
 
-    if document_data.document_type not in ALLOWED_DOCUMENT_TYPES:
-        return "Document type must be Invoice or PAM."
+    if not document_data.pam_number or "/SCM/" not in document_data.pam_number:
+        return "Document PAM Number is required and must follow the format ***/SCM/Bulan/Tahun."
+
+    # Validate that we have at least one non-empty invoice number
+    try:
+        inv_list = json.loads(document_data.invoice_number)
+        if not inv_list or not any(inv.strip() for inv in inv_list):
+            return "At least one Invoice Number is required."
+    except Exception:
+        return "Invoice Number must be a valid list."
 
     if document_data.tc not in ALLOWED_TC_OPTIONS:
         return "TC must be Yes or No."
+
+    if document_data.tc == "Yes":
+        if document_data.tc_type not in ("Export", "Import"):
+            return "Please select Import or Export for TC option."
+        if not document_data.kode_bl or not document_data.kode_bl.strip():
+            return "Kode BL is required when TC is Yes."
+        try:
+            si_list = json.loads(document_data.no_si) if document_data.no_si else []
+            if not si_list or not any(si.strip() for si in si_list):
+                return "At least one No SI is required when TC is Yes."
+        except Exception:
+            return "No SI must be a valid list."
+        if not document_data.vessel_name or not document_data.vessel_name.strip():
+            return "Vessel Name is required when TC is Yes."
 
     if document_data.status not in ALLOWED_DOCUMENT_STATUSES:
         return "Status must be Pending, Approved, or Rejected."
@@ -413,6 +527,22 @@ def _build_approver_success_message(request: Request) -> str | None:
     return "Bukti serah dokumen berhasil diupload dan Current Location sudah diperbarui."
 
 
+def _get_document_for_handoff(
+    db: Session,
+    document_id: int,
+) -> Document | None:
+    document = (
+        db.query(Document)
+        .options(joinedload(Document.approver), joinedload(Document.files))
+        .filter(Document.id == document_id)
+        .first()
+    )
+    if document is None:
+        return None
+
+    return attach_display_status(document)
+
+
 def _get_active_document_from_request(
     request: Request,
     db: Session,
@@ -430,21 +560,14 @@ def _get_active_document_from_request(
     if document is None:
         return None
 
-    return attach_display_status(document)
-
-
-def _get_document_for_handoff(
-    db: Session,
-    document_id: int,
-) -> Document | None:
-    document = (
-        db.query(Document)
-        .options(joinedload(Document.approver), joinedload(Document.files))
-        .filter(Document.id == document_id)
-        .first()
-    )
-    if document is None:
-        return None
+    if document.invoice_number:
+        try:
+            invs = json.loads(document.invoice_number)
+            document.invoice_display = ", ".join(invs)
+        except Exception:
+            document.invoice_display = document.invoice_number
+    else:
+        document.invoice_display = ""
 
     return attach_display_status(document)
 

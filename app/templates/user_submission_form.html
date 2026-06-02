@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0f3460">
-    <title>TRACKFLOW - User Submission</title>
+    <title>TRACKFLOW - User PAM Submission</title>
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         rel="stylesheet"
@@ -179,6 +179,34 @@
             min-height: 6rem;
             resize: vertical;
         }
+        
+        /* Custom styled elements for dynamic lists and TC */
+        .invoice-input-row .btn, .si-input-row .btn {
+            border-color: var(--tf-border);
+            color: var(--tf-muted);
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .invoice-input-row .btn:hover, .si-input-row .btn:hover {
+            background-color: var(--tf-danger);
+            border-color: var(--tf-danger);
+            color: #fff;
+        }
+        
+        .tc-item-row {
+            background-color: #fafcff;
+            border: 1.5px solid var(--tf-border);
+            border-radius: var(--tf-radius-sm);
+            transition: all 0.2s ease;
+        }
+        .tc-item-row:hover {
+            border-color: var(--tf-primary-mid);
+        }
+        .tc-item-row.checked {
+            background-color: var(--tf-accent-light);
+            border-color: var(--tf-accent);
+        }
+        
         .tf-submit-btn {
             display: flex;
             align-items: center;
@@ -228,12 +256,20 @@
 
             <div class="tf-card-body">
 
-
                 {% if active_document %}
                 <div class="tf-active-doc">
                     <div class="tf-label-mini">Active Document</div>
-                    <div class="tf-name" style="font-size:0.95rem;">Invoice {{ active_document.invoice_number }}</div>
+                    <div class="tf-name" style="font-size:0.95rem;">
+                        {% if active_document.pam_number %}
+                            PAM {{ active_document.pam_number }}
+                        {% else %}
+                            Invoice {{ active_document.invoice_display }}
+                        {% endif %}
+                    </div>
                     <div class="tf-subtext">
+                        {% if active_document.pam_number %}
+                            <strong>Invoices:</strong> {{ active_document.invoice_display }}<br>
+                        {% endif %}
                         {% if active_document.approver %}
                             Saat ini berada di {{ active_document.approver.approval_name }}.
                         {% else %}
@@ -260,45 +296,98 @@
                 <form method="post" action="{{ request.url.path }}" novalidate>
                     <div class="tf-section-title">Document Information</div>
 
+                    <!-- Composite PAM Number Input -->
                     <div class="mb-3">
-                        <label for="document_type" class="form-label">
-                            Document Type <span class="tf-required">*</span>
+                        <label for="pam_number_prefix" class="form-label">
+                            Document PAM Number <span class="tf-required">*</span>
                         </label>
-                        <select class="form-select" id="document_type" name="document_type" required>
-                            {% for doc_type in allowed_document_types %}
-                            <option value="{{ doc_type }}" {% if form_data.document_type == doc_type %}selected{% endif %}>{{ doc_type }}</option>
-                            {% endfor %}
-                        </select>
+                        {% set pam_parts = form_data.pam_number.split('/SCM/') if form_data.pam_number and '/SCM/' in form_data.pam_number else None %}
+                        {% if pam_parts %}
+                            {% set pam_prefix = pam_parts[0] %}
+                            {% set pam_suffix = pam_parts[1] %}
+                        {% else %}
+                            {% set pam_prefix = "" %}
+                            {% set pam_suffix = "" %}
+                        {% endif %}
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                class="form-control text-end"
+                                id="pam_number_prefix"
+                                placeholder="***"
+                                value="{{ pam_prefix }}"
+                                style="max-width: 120px;"
+                                required
+                                autocomplete="off"
+                            >
+                            <span class="input-group-text bg-light font-monospace">/SCM/</span>
+                            <input
+                                type="text"
+                                class="form-control font-monospace"
+                                id="pam_number_suffix"
+                                value="{{ pam_suffix }}"
+                                readonly
+                            >
+                        </div>
+                        <input type="hidden" id="pam_number" name="pam_number" value="{{ form_data.pam_number }}">
                     </div>
 
+                    <!-- Multiple Invoice Numbers -->
                     <div class="mb-3">
-                        <label for="invoice_number" class="form-label">
+                        <label class="form-label">
                             Invoice Number <span class="tf-required">*</span>
                         </label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="invoice_number"
-                            name="invoice_number"
-                            value="{{ form_data.invoice_number }}"
-                            required
-                            autocomplete="off"
-                        >
+                        <div id="invoice-inputs-container">
+                            {% for inv in form_data.invoice_list %}
+                            <div class="input-group mb-2 invoice-input-row">
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    name="invoice_number"
+                                    value="{{ inv }}"
+                                    required
+                                    autocomplete="off"
+                                    placeholder="Enter Invoice Number"
+                                >
+                                {% if not loop.first %}
+                                <button type="button" class="btn btn-outline-danger remove-invoice-btn" onclick="this.closest('.invoice-input-row').remove();">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-1" id="add-invoice-btn">
+                            <i class="bi bi-plus-lg"></i> Add Invoice
+                        </button>
                     </div>
 
                     <div class="mb-3">
-                        <label for="qty_price" class="form-label">
+                        <label for="qty_price_display" class="form-label">
                             Qty / Price <span class="tf-required">*</span>
                         </label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="qty_price"
-                            name="qty_price"
-                            value="{{ form_data.qty_price }}"
-                            required
-                            autocomplete="off"
-                        >
+                        <div class="input-group">
+                            <select
+                                class="form-select"
+                                id="qty_currency"
+                                name="qty_currency"
+                                style="max-width: 80px; border-right: none; border-radius: var(--tf-radius-sm) 0 0 var(--tf-radius-sm);"
+                            >
+                                <option value="IDR" {% if form_data.qty_currency == 'IDR' or not form_data.qty_currency %}selected{% endif %}>IDR</option>
+                                <option value="USD" {% if form_data.qty_currency == 'USD' %}selected{% endif %}>USD</option>
+                            </select>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="qty_price_display"
+                                name="qty_price"
+                                value="{{ form_data.qty_price }}"
+                                required
+                                autocomplete="off"
+                                inputmode="numeric"
+                                style="border-left: none; border-radius: 0 var(--tf-radius-sm) var(--tf-radius-sm) 0;"
+                            >
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -310,6 +399,145 @@
                             <option value="{{ tc_option }}" {% if form_data.tc == tc_option %}selected{% endif %}>{{ tc_option }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+
+                    <!-- TC Conditional Section -->
+                    <div id="tc-conditional-section" style="display: none; padding-left: 1rem; border-left: 3px solid var(--tf-primary-mid); margin-bottom: 1.5rem;">
+                        
+                        <div class="mb-3">
+                            <label for="tc_type" class="form-label">TC Type <span class="tf-required">*</span></label>
+                            <select class="form-select" id="tc_type" name="tc_type">
+                                <option value="" {% if not form_data.tc_type %}selected{% endif %} disabled>Select Export or Import...</option>
+                                <option value="Import" {% if form_data.tc_type == "Import" %}selected{% endif %}>Import</option>
+                                <option value="Export" {% if form_data.tc_type == "Export" %}selected{% endif %}>Export</option>
+                            </select>
+                        </div>
+
+                        <!-- Import checkboxes & amounts -->
+                        <div id="tc-import-options" style="display: none;" class="mb-3">
+                            <label class="form-label text-muted d-block" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Import Sub-charges</label>
+                            
+                            <!-- Empty -->
+                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                <div class="form-check m-0 ms-2">
+                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_empty" name="tc_import_empty" {% if form_data.tc_details_dict.get('empty', {}).get('checked') %}checked{% endif %}>
+                                    <label class="form-check-label form-label m-0" for="tc_import_empty">Empty</label>
+                                </div>
+                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                    <input type="number" class="form-control form-control-sm" name="tc_import_empty_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('empty', {}).get('amount', '') }}">
+                                </div>
+                            </div>
+
+                            <!-- Vandling biaya -->
+                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                <div class="form-check m-0 ms-2">
+                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_handling" name="tc_import_handling" {% if form_data.tc_details_dict.get('handling', {}).get('checked') %}checked{% endif %}>
+                                    <label class="form-check-label form-label m-0" for="tc_import_handling">Vandling biaya</label>
+                                </div>
+                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                    <input type="number" class="form-control form-control-sm" name="tc_import_handling_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling', {}).get('amount', '') }}">
+                                </div>
+                            </div>
+
+                            <!-- Other -->
+                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                <div class="form-check m-0 ms-2">
+                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_other" name="tc_import_other" {% if form_data.tc_details_dict.get('other', {}).get('checked') %}checked{% endif %}>
+                                    <label class="form-check-label form-label m-0" for="tc_import_other">Other</label>
+                                </div>
+                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                    <input type="number" class="form-control form-control-sm" name="tc_import_other_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('other', {}).get('amount', '') }}">
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Export checkboxes & amounts -->
+                        <div id="tc-export-options" style="display: none;" class="mb-3">
+                            <label class="form-label text-muted d-block" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Export Sub-charges</label>
+                            
+                            <!-- Biaya Cleaning -->
+                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                <div class="form-check m-0 ms-2">
+                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_cleaning" name="tc_export_cleaning" {% if form_data.tc_details_dict.get('cleaning', {}).get('checked') %}checked{% endif %}>
+                                    <label class="form-check-label form-label m-0" for="tc_export_cleaning">Biaya Cleaning</label>
+                                </div>
+                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                    <input type="number" class="form-control form-control-sm" name="tc_export_cleaning_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('cleaning', {}).get('amount', '') }}">
+                                </div>
+                            </div>
+
+                            <!-- Vandling biaya -->
+                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                <div class="form-check m-0 ms-2">
+                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling" name="tc_export_handling" {% if form_data.tc_details_dict.get('handling', {}).get('checked') %}checked{% endif %}>
+                                    <label class="form-check-label form-label m-0" for="tc_export_handling">Vandling biaya</label>
+                                </div>
+                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                    <input type="number" class="form-control form-control-sm" name="tc_export_handling_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling', {}).get('amount', '') }}">
+                                </div>
+                            </div>
+
+                            <!-- Other -->
+                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                <div class="form-check m-0 ms-2">
+                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_other" name="tc_export_other" {% if form_data.tc_details_dict.get('other', {}).get('checked') %}checked{% endif %}>
+                                    <label class="form-check-label form-label m-0" for="tc_export_other">Other</label>
+                                </div>
+                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                    <input type="number" class="form-control form-control-sm" name="tc_export_other_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('other', {}).get('amount', '') }}">
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Common TC fields: Kode BL & No SI -->
+                        <div id="tc-common-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="kode_bl" class="form-label">Kode BL <span class="tf-required">*</span></label>
+                                <input type="text" class="form-control" id="kode_bl" name="kode_bl" value="{{ form_data.kode_bl }}" placeholder="Enter Kode BL" autocomplete="off">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">No SI <span class="tf-required">*</span></label>
+                                <div id="si-inputs-container">
+                                    {% for si in form_data.no_si_list %}
+                                    <div class="input-group mb-2 si-input-row">
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            name="no_si"
+                                            value="{{ si }}"
+                                            placeholder="Enter No SI"
+                                            autocomplete="off"
+                                        >
+                                        {% if not loop.first %}
+                                        <button type="button" class="btn btn-outline-danger remove-si-btn" onclick="this.closest('.si-input-row').remove();">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-1" id="add-si-btn">
+                                    <i class="bi bi-plus-lg"></i> Add No SI
+                                </button>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="vessel_name" class="form-label">Vessel Name <span class="tf-required">*</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="vessel_name"
+                                    name="vessel_name"
+                                    value="{{ form_data.vessel_name or '' }}"
+                                    placeholder="Enter Vessel Name"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="tf-section-title">Document Status</div>
@@ -331,6 +559,7 @@
                             class="form-control"
                             id="notes"
                             name="notes"
+                            placeholder="Any notes or remarks..."
                         >{{ form_data.notes }}</textarea>
                     </div>
 
@@ -346,5 +575,232 @@
             TRACKFLOW - QR Document Approval Tracking System
         </footer>
     </div>
+
+    <script>
+        // ── Qty/Price Auto-format (thousands) ─────────────────────────────
+        (function() {
+            const qtyInput    = document.getElementById('qty_price_display');
+            const currSelect  = document.getElementById('qty_currency');
+            if (!qtyInput || !currSelect) return;
+
+            function getRawNumber(val) {
+                // Strip all non-digit and non-dot/comma, keep only digits
+                return val.replace(/[^\d]/g, '');
+            }
+
+            function formatIDR(raw) {
+                if (!raw) return '';
+                // Pisahkan dengan titik setiap 3 digit (format Indonesia)
+                return raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function formatUSD(raw) {
+                if (!raw) return '';
+                // Pisahkan dengan koma setiap 3 digit (format US)
+                return raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
+
+            function formatValue() {
+                const caret = qtyInput.selectionStart;
+                const prevLen = qtyInput.value.length;
+                const raw = getRawNumber(qtyInput.value);
+                const currency = currSelect.value;
+                const formatted = currency === 'USD' ? formatUSD(raw) : formatIDR(raw);
+                qtyInput.value = formatted;
+                // Adjust cursor position
+                const diff = formatted.length - prevLen;
+                qtyInput.setSelectionRange(caret + diff, caret + diff);
+            }
+
+            // Format on input
+            qtyInput.addEventListener('input', formatValue);
+
+            // Re-format when currency changes
+            currSelect.addEventListener('change', function() {
+                const raw = getRawNumber(qtyInput.value);
+                qtyInput.value = currSelect.value === 'USD' ? formatUSD(raw) : formatIDR(raw);
+            });
+
+            // Format existing value on load
+            if (qtyInput.value) {
+                const raw = getRawNumber(qtyInput.value);
+                qtyInput.value = currSelect.value === 'USD' ? formatUSD(raw) : formatIDR(raw);
+            }
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- 1. PAM Number prefix/suffix logic ---
+            const suffixInput = document.getElementById('pam_number_suffix');
+            const hiddenPamInput = document.getElementById('pam_number');
+            const prefixInput = document.getElementById('pam_number_prefix');
+
+            // Auto-fill Month/Year if suffix is empty
+            if (!suffixInput.value) {
+                const now = new Date();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const year = now.getFullYear();
+                suffixInput.value = `${month}/${year}`;
+            }
+
+            function updatePamNumber() {
+                const prefix = prefixInput.value.trim();
+                const suffix = suffixInput.value.trim();
+                if (prefix) {
+                    hiddenPamInput.value = `${prefix}/SCM/${suffix}`;
+                } else {
+                    hiddenPamInput.value = '';
+                }
+            }
+
+            prefixInput.addEventListener('input', updatePamNumber);
+
+            // --- 2. Multiple Invoice Numbers ---
+            document.getElementById('add-invoice-btn').addEventListener('click', function() {
+                const container = document.getElementById('invoice-inputs-container');
+                const newRow = document.createElement('div');
+                newRow.className = 'input-group mb-2 invoice-input-row';
+                newRow.innerHTML = `
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="invoice_number"
+                        required
+                        autocomplete="off"
+                        placeholder="Enter Invoice Number"
+                    >
+                    <button type="button" class="btn btn-outline-danger remove-invoice-btn">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                `;
+                container.appendChild(newRow);
+
+                newRow.querySelector('.remove-invoice-btn').addEventListener('click', function() {
+                    newRow.remove();
+                });
+            });
+
+            // --- 3. Multiple No SI ---
+            document.getElementById('add-si-btn').addEventListener('click', function() {
+                const container = document.getElementById('si-inputs-container');
+                const newRow = document.createElement('div');
+                newRow.className = 'input-group mb-2 si-input-row';
+                newRow.innerHTML = `
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="no_si"
+                        required
+                        autocomplete="off"
+                        placeholder="Enter No SI"
+                    >
+                    <button type="button" class="btn btn-outline-danger remove-si-btn">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                `;
+                container.appendChild(newRow);
+
+                newRow.querySelector('.remove-si-btn').addEventListener('click', function() {
+                    newRow.remove();
+                });
+            });
+
+            // --- 4. TC Conditional Visibility & Validation Logic ---
+            function updateVisibility() {
+                const tcVal = document.getElementById('tc').value;
+                const tcTypeVal = document.getElementById('tc_type').value;
+                const condSection = document.getElementById('tc-conditional-section');
+                const importOpts = document.getElementById('tc-import-options');
+                const exportOpts = document.getElementById('tc-export-options');
+                const commonFields = document.getElementById('tc-common-fields');
+                
+                if (tcVal === 'Yes') {
+                    condSection.style.display = 'block';
+                    if (tcTypeVal === 'Import') {
+                        importOpts.style.display = 'block';
+                        exportOpts.style.display = 'none';
+                        commonFields.style.display = 'block';
+                        setInputsRequired(importOpts, true);
+                        setInputsRequired(exportOpts, false);
+                        setInputsRequired(commonFields, true);
+                    } else if (tcTypeVal === 'Export') {
+                        importOpts.style.display = 'none';
+                        exportOpts.style.display = 'block';
+                        commonFields.style.display = 'block';
+                        setInputsRequired(importOpts, false);
+                        setInputsRequired(exportOpts, true);
+                        setInputsRequired(commonFields, true);
+                    } else {
+                        importOpts.style.display = 'none';
+                        exportOpts.style.display = 'none';
+                        commonFields.style.display = 'none';
+                        setInputsRequired(importOpts, false);
+                        setInputsRequired(exportOpts, false);
+                        setInputsRequired(commonFields, false);
+                    }
+                } else {
+                    condSection.style.display = 'none';
+                    setInputsRequired(condSection, false);
+                }
+            }
+
+            function setInputsRequired(container, isRequired) {
+                if (!container) return;
+                container.querySelectorAll('input, select').forEach(el => {
+                    if (el.type === 'checkbox') return;
+                    if (el.closest('.tc-amount-container')) {
+                        const row = el.closest('.tc-item-row');
+                        const cb = row.querySelector('.tc-checkbox');
+                        el.required = isRequired && cb.checked;
+                    } else {
+                        el.required = isRequired;
+                    }
+                });
+            }
+
+            function toggleAmountFields() {
+                document.querySelectorAll('.tc-checkbox').forEach(cb => {
+                    const row = cb.closest('.tc-item-row');
+                    const amountContainer = row.querySelector('.tc-amount-container');
+                    const amountInput = amountContainer.querySelector('input');
+                    if (cb.checked) {
+                        row.classList.add('checked');
+                        amountContainer.style.display = 'block';
+                    } else {
+                        row.classList.remove('checked');
+                        amountContainer.style.display = 'none';
+                        amountInput.value = ''; // Clear input value if unchecked
+                    }
+                });
+                
+                // Re-evaluate required states since checkbox states might have changed
+                updateVisibility();
+            }
+
+            // Event Listeners for TC visibility & amounts
+            document.getElementById('tc').addEventListener('change', function() {
+                updateVisibility();
+                toggleAmountFields();
+            });
+
+            document.getElementById('tc_type').addEventListener('change', function() {
+                updateVisibility();
+                toggleAmountFields();
+            });
+
+            document.querySelectorAll('.tc-checkbox').forEach(cb => {
+                cb.addEventListener('change', toggleAmountFields);
+            });
+
+            // Ensure correct state on page load (e.g. after validation error)
+            updateVisibility();
+            toggleAmountFields();
+
+            // Intercept form submit to construct final PAM Number
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                updatePamNumber();
+            });
+        });
+    </script>
 </body>
 </html>

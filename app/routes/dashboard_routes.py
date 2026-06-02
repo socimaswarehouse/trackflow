@@ -255,6 +255,7 @@ def post_add_user_document(
     document_type: str = Form(...),
     invoice_number: str = Form(...),
     qty_price: str = Form(...),
+    qty_currency: str = Form(default="IDR"),
     tc: str = Form(...),
     status: str = Form(...),
     notes: str = Form(default=""),
@@ -263,6 +264,7 @@ def post_add_user_document(
     cleaned_document_type = document_type.strip()
     cleaned_invoice_number = invoice_number.strip()
     cleaned_qty_price = qty_price.strip()
+    cleaned_qty_currency = qty_currency.strip() or "IDR"
     cleaned_tc = tc.strip()
     cleaned_status = status.strip()
     cleaned_notes = notes.strip()
@@ -313,6 +315,7 @@ def post_add_user_document(
             db=db,
             submitter_id=submitter_id,
             document_data=document_data,
+            currency=cleaned_qty_currency,
         )
     except ValueError as exc:
         return RedirectResponse(
@@ -332,6 +335,7 @@ def post_update_user_qr_document(
     document_type: str = Form(...),
     invoice_number: str = Form(...),
     qty_price: str = Form(...),
+    qty_currency: str = Form(default="IDR"),
     tc: str = Form(...),
     status: str = Form(...),
     notes: str = Form(default=""),
@@ -340,6 +344,7 @@ def post_update_user_qr_document(
     cleaned_document_type = document_type.strip()
     cleaned_invoice_number = invoice_number.strip()
     cleaned_qty_price = qty_price.strip()
+    cleaned_qty_currency = qty_currency.strip() or "IDR"
     cleaned_tc = tc.strip()
     cleaned_status = status.strip()
     cleaned_notes = notes.strip()
@@ -378,6 +383,7 @@ def post_update_user_qr_document(
             tc=cleaned_tc,
             status=cleaned_status,
             notes=cleaned_notes or None,
+            currency=cleaned_qty_currency,
         )
     except ValueError as exc:
         return RedirectResponse(
