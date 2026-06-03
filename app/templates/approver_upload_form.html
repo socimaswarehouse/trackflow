@@ -312,19 +312,19 @@
 
                 <form method="post" action="{{ request.url.path }}" enctype="multipart/form-data">
                     <div class="tf-form-group">
-                        <label for="invoice_number" class="tf-form-label">
-                            Invoice Number <span class="tf-required">*</span>
+                        <label for="pam_number" class="tf-form-label">
+                            PAM Number <span class="tf-required">*</span>
                         </label>
                         <select
                             class="tf-input"
-                            id="invoice_number"
-                            name="invoice_number"
+                            id="pam_number"
+                            name="pam_number"
                             required
                         >
-                            <option value="">Pilih Invoice Number</option>
-                            {% for document in invoice_options %}
-                            <option value="{{ document.invoice_number }}" {% if form_invoice_number == document.invoice_number %}selected{% endif %}>
-                                {{ document.invoice_number }}
+                            <option value="">Pilih PAM Number</option>
+                            {% for document in pam_options %}
+                            <option value="{{ document.pam_number }}" {% if form_pam_number == document.pam_number %}selected{% endif %}>
+                                {{ document.pam_number }}
                             </option>
                             {% endfor %}
                         </select>

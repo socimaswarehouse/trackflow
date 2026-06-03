@@ -108,9 +108,42 @@ def find_open_document_by_invoice(
     return attach_display_status(document)
 
 
+def find_open_document_by_pam(
+    db: Session,
+    pam_number: str,
+) -> Document | None:
+    normalized_pam_number = pam_number.strip()
+    if not normalized_pam_number:
+        return None
+
+    document = (
+        db.query(Document)
+        .filter(Document.pam_number == normalized_pam_number)
+        .filter(~Document.status.in_(TERMINAL_DOCUMENT_STATUSES))
+        .order_by(Document.created_at.desc(), Document.id.desc())
+        .first()
+    )
+    if document is None:
+        return None
+
+    return attach_display_status(document)
+
+
 def get_open_invoice_options(db: Session) -> list[Document]:
     documents = (
         db.query(Document)
+        .filter(~Document.status.in_(TERMINAL_DOCUMENT_STATUSES))
+        .order_by(Document.created_at.desc(), Document.id.desc())
+        .all()
+    )
+    return [attach_display_status(document) for document in documents]
+
+
+def get_open_pam_options(db: Session) -> list[Document]:
+    documents = (
+        db.query(Document)
+        .filter(Document.pam_number.isnot(None))
+        .filter(Document.pam_number != "")
         .filter(~Document.status.in_(TERMINAL_DOCUMENT_STATUSES))
         .order_by(Document.created_at.desc(), Document.id.desc())
         .all()

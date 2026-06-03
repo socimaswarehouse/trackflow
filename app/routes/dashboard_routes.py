@@ -1,8 +1,11 @@
 """Dashboard and approver management routes."""
+import csv
+from datetime import datetime
+from io import StringIO
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Query, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -212,6 +215,34 @@ def get_user_qr_management(
             "error_message": request.query_params.get("error"),
             **summary,
         },
+    )
+
+
+@router.get("/dashboard/users/export", tags=["Dashboard"])
+def export_user_qr_documents(
+    search: str = Query(default=""),
+    status: str = Query(default=""),
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    document_type: str = Query(default=""),
+    db: Session = Depends(get_db),
+):
+    """Export Document Request tracking data using the active table filters."""
+    documents = get_dashboard_documents(
+        db,
+        search=search or None,
+        status=status or None,
+        date_from=date_from or None,
+        date_to=date_to or None,
+        document_type=document_type or None,
+    )
+    csv_content = _build_document_request_export_csv(documents)
+    filename = f"trackflow_document_request_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return Response(
+        content=csv_content.encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
@@ -565,3 +596,64 @@ def _build_user_qr_success_message(request: Request) -> str | None:
         return "Document berhasil dihapus dari operational tracking table."
 
     return None
+
+
+def _build_document_request_export_csv(documents) -> str:
+    output = StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "Date",
+            "Time",
+            "Current Location",
+            "PAM Number",
+            "Invoice Number",
+            "Document Type",
+            "Qty / Price",
+            "Currency",
+            "TC",
+            "Shipment Type",
+            "Vessel Name",
+            "No BL",
+            "No SI",
+            "TC Details",
+            "Remarks",
+            "Attachment",
+            "Status",
+            "Reference Number",
+        ]
+    )
+
+    for document in documents:
+        created_at = document.created_at_local or document.created_at
+        writer.writerow(
+            [
+                created_at.strftime("%d %b %Y") if created_at else "",
+                created_at.strftime("%H:%M") if created_at else "",
+                document.approver.approval_name if document.approver else "Belum diserahkan ke approver",
+                _csv_value(document.pam_number),
+                _csv_value(getattr(document, "invoice_display", document.invoice_number)),
+                _csv_value(document.document_type),
+                _csv_value(getattr(document, "qty_price_clean", document.qty_price)),
+                _csv_value(document.currency or "IDR"),
+                _csv_value(document.tc),
+                _csv_value(document.tc_type),
+                _csv_value(document.vessel_name),
+                _csv_value(document.kode_bl),
+                _csv_value(", ".join(getattr(document, "no_si_list_parsed", []) or [])),
+                _csv_value(getattr(document, "tc_details_display", "")),
+                _csv_value(document.notes),
+                _csv_value(", ".join(file.original_name for file in document.files)),
+                _csv_value(document.status_display),
+                _csv_value(document.doc_number),
+            ]
+        )
+
+    return output.getvalue()
+
+
+def _csv_value(value) -> str:
+    if value is None:
+        return ""
+
+    return str(value).replace("\r", " ").replace("\n", " ").strip()
