@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.config import get_base_url
+from app.config import get_public_base_url
 from app.database.session import get_db
 from app.services.approver_service import (
     get_approver_by_slug,
@@ -32,7 +32,7 @@ def generate_approver_qr(
     if approver is None:
         raise HTTPException(status_code=404, detail="Approver not found")
 
-    base_url = get_base_url()
+    base_url = get_public_base_url(request)
     qr_status = "Existing QR"
     qr_path = approver.qr_code_path
 
@@ -70,7 +70,7 @@ def generate_user_qr(
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
-    base_url = get_base_url()
+    base_url = get_public_base_url(request)
     qr_slug = f"user-{user.id}"
     target_url = f"{base_url}/submit/user/{user.id}"
     qr_path = generate_qr_code(qr_slug, target_url)
@@ -103,6 +103,7 @@ def _is_existing_qr_available(qr_path: str | None) -> bool:
 
 @router.get("/qr-image/approver/{slug}", tags=["QR"])
 def get_approver_qr_image(
+    request: Request,
     slug: str,
     db: Session = Depends(get_db),
 ):
@@ -110,7 +111,7 @@ def get_approver_qr_image(
     if approver is None:
         raise HTTPException(status_code=404, detail="Approver not found")
 
-    base_url = get_base_url()
+    base_url = get_public_base_url(request)
     target_url = f"{base_url}/submit/{approver.slug}"
     return Response(
         content=generate_qr_png_bytes(target_url),
@@ -120,6 +121,7 @@ def get_approver_qr_image(
 
 @router.get("/qr-image/user/{user_id}", tags=["QR"])
 def get_user_qr_image(
+    request: Request,
     user_id: int,
     db: Session = Depends(get_db),
 ):
@@ -127,7 +129,7 @@ def get_user_qr_image(
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
-    base_url = get_base_url()
+    base_url = get_public_base_url(request)
     target_url = f"{base_url}/submit/user/{user.id}"
     return Response(
         content=generate_qr_png_bytes(target_url),

@@ -19,8 +19,8 @@ from app.services.document_service import (
     assign_document_to_approver,
     attach_file_to_document,
     create_document,
-    find_open_document_by_invoice,
-    get_open_invoice_options,
+    find_open_document_by_pam,
+    get_open_pam_options,
 )
 from app.services.status_service import ALLOWED_DOCUMENT_STATUSES, attach_display_status
 from app.services.user_service import get_user_by_id
@@ -267,7 +267,7 @@ def get_approver_upload_page(
 async def submit_approver_handoff(
     request: Request,
     slug: str,
-    invoice_number: str = Form(...),
+    pam_number: str = Form(...),
     attachment: UploadFile | None = File(default=None),
     camera_attachment: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
@@ -276,18 +276,18 @@ async def submit_approver_handoff(
     if approver is None:
         raise HTTPException(status_code=404, detail="Approver not found")
 
-    cleaned_invoice_number = invoice_number.strip()
-    active_document = find_open_document_by_invoice(db, cleaned_invoice_number)
+    cleaned_pam_number = pam_number.strip()
+    active_document = find_open_document_by_pam(db, cleaned_pam_number)
     uploaded_attachment = _pick_uploaded_attachment(camera_attachment, attachment)
 
-    if not cleaned_invoice_number:
+    if not cleaned_pam_number:
         return _render_approver_upload_page(
             request=request,
             approver=approver,
             active_document=None,
             success_message=None,
-            error_message="Invoice Number wajib diisi sebelum upload bukti dokumen.",
-            form_invoice_number=invoice_number,
+            error_message="PAM Number wajib diisi sebelum upload bukti dokumen.",
+            form_pam_number=pam_number,
             status_code=422,
             db=db,
         )
@@ -299,10 +299,10 @@ async def submit_approver_handoff(
             active_document=None,
             success_message=None,
             error_message=(
-                "Invoice Number tidak ditemukan di Document Data Submission "
+                "PAM Number tidak ditemukan di Document Data Submission "
                 "atau dokumen tersebut sudah selesai/rejected."
             ),
-            form_invoice_number=cleaned_invoice_number,
+            form_pam_number=cleaned_pam_number,
             status_code=422,
             db=db,
         )
@@ -314,7 +314,7 @@ async def submit_approver_handoff(
             active_document=active_document,
             success_message=None,
             error_message="Foto atau file dokumen wajib diupload saat scan QR approver.",
-            form_invoice_number=cleaned_invoice_number,
+            form_pam_number=cleaned_pam_number,
             status_code=422,
             db=db,
         )
@@ -332,7 +332,7 @@ async def submit_approver_handoff(
             active_document=active_document,
             success_message=None,
             error_message=str(exc),
-            form_invoice_number=cleaned_invoice_number,
+            form_pam_number=cleaned_pam_number,
             status_code=422,
             db=db,
         )
@@ -345,7 +345,7 @@ async def submit_approver_handoff(
             active_document=active_document,
             success_message=None,
             error_message="Attachment is too large. Maximum file size is 10 MB.",
-            form_invoice_number=cleaned_invoice_number,
+            form_pam_number=cleaned_pam_number,
             status_code=422,
             db=db,
         )
@@ -431,11 +431,11 @@ def _render_approver_upload_page(
     active_document: Document | None,
     success_message: str | None,
     error_message: str | None,
-    form_invoice_number: str | None = None,
+    form_pam_number: str | None = None,
     status_code: int = 200,
     db: Session | None = None,
 ):
-    invoice_options = get_open_invoice_options(db) if db is not None else []
+    pam_options = get_open_pam_options(db) if db is not None else []
     return templates.TemplateResponse(
         request=request,
         name="approver_upload_form.html",
@@ -444,11 +444,11 @@ def _render_approver_upload_page(
             "active_document": active_document,
             "success_message": success_message,
             "error_message": error_message,
-            "invoice_options": invoice_options,
-            "form_invoice_number": (
-                form_invoice_number
-                if form_invoice_number is not None
-                else active_document.invoice_number
+            "pam_options": pam_options,
+            "form_pam_number": (
+                form_pam_number
+                if form_pam_number is not None
+                else active_document.pam_number
                 if active_document is not None
                 else ""
             ),

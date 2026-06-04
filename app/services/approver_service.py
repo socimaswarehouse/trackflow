@@ -30,7 +30,6 @@ def create_approver(
     approval_name: str,
     department: str | None = None,
 ) -> Approver:
-    base_url = get_base_url()
     slug = _build_unique_slug(db, approval_name)
     timestamp = datetime.utcnow()
     email = f"{slug}@trackflow.local"
@@ -54,7 +53,7 @@ def create_approver(
         slug=slug,
         department=department,
         email=email,
-        qr_url=f"{base_url}/submit/{slug}",
+        qr_url=_build_submit_url(slug),
         is_active=True,
         created_at=timestamp,
         updated_at=timestamp,
@@ -143,9 +142,8 @@ def update_approver_qr_path(
     approver: Approver,
     qr_code_path: str,
 ) -> Approver:
-    base_url = get_base_url()
     approver.qr_code_path = qr_code_path
-    approver.qr_url = f"{base_url}/submit/{approver.slug}"
+    approver.qr_url = _build_submit_url(approver.slug)
     db.add(approver)
     db.commit()
     db.refresh(approver)
@@ -165,3 +163,10 @@ def _build_unique_slug(db: Session, approval_name: str) -> str:
         counter += 1
 
     return slug
+
+
+def _build_submit_url(slug: str) -> str:
+    try:
+        return f"{get_base_url()}/submit/{slug}"
+    except ValueError:
+        return f"/submit/{slug}"
