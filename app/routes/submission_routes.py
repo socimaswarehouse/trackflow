@@ -80,6 +80,15 @@ async def submit_user_document(
     
     # Extract invoices from frontend data
     invoices = [inv.get("invoiceNumber", "") for inv in invoice_data_list if inv.get("invoiceNumber", "").strip()]
+    # Extract invoice data from JSON (from frontend tabbed system)
+    invoice_data_json_str = form_data.get("invoice_data_json", "[]").strip()
+    try:
+        invoice_data_list = json.loads(invoice_data_json_str) if invoice_data_json_str else []
+    except json.JSONDecodeError:
+        invoice_data_list = []
+    
+    # Extract invoices from frontend data
+    invoices = [inv.get("invoiceNumber", "") for inv in invoice_data_list if inv.get("invoiceNumber", "").strip()]
     invoice_number_str = json.dumps(invoices)
     
     qty_price = form_data.get("qty_price", "").strip()
@@ -122,9 +131,19 @@ async def submit_user_document(
                 kode_bl_val = invoice_data_list[0].get("blOrSi", "").strip()
             else:
                 kode_bl_val = form_data.get("kode_bl", "").strip()
+            # Extract BL from first invoice or from form
+            if invoice_data_list and len(invoice_data_list) > 0:
+                kode_bl_val = invoice_data_list[0].get("blOrSi", "").strip()
+            else:
+                kode_bl_val = form_data.get("kode_bl", "").strip()
             no_si_val = json.dumps([])
         elif tc_type_val == "Export":
             kode_bl_val = None
+            # Extract SI from all invoices
+            if invoice_data_list and len(invoice_data_list) > 0:
+                no_si_list = [inv.get("blOrSi", "").strip() for inv in invoice_data_list if inv.get("blOrSi", "").strip()]
+            else:
+                no_si_list = []
             # Extract SI from all invoices
             if invoice_data_list and len(invoice_data_list) > 0:
                 no_si_list = [inv.get("blOrSi", "").strip() for inv in invoice_data_list if inv.get("blOrSi", "").strip()]
@@ -166,6 +185,7 @@ async def submit_user_document(
         "invoice_list": invoices if invoices else [""],
         "tc_details_dict": tc_details_dict,
         "no_si_list": no_si_list if no_si_list else [""],
+        "invoice_data_json": invoice_data_json_str,
         "invoice_data_json": invoice_data_json_str,
     }
 
@@ -462,6 +482,7 @@ def _default_form_data() -> dict[str, any]:
         "no_si_list": [""],
         "vessel_name": "",
         "invoice_data_json": "[]",
+        "invoice_data_json": "[]",
     }
 
 
@@ -491,10 +512,14 @@ def _validate_document_submission(form_data: dict[str, any]) -> str | None:
     # Validate that we have at least one non-empty invoice number
     try:
         inv_list = json.loads(document_data.invoice_number) if document_data.invoice_number else []
+        inv_list = json.loads(document_data.invoice_number) if document_data.invoice_number else []
         if not inv_list or not any(inv.strip() for inv in inv_list):
             return "At least one Invoice Number is required."
     except Exception:
         return "Invoice Number must be a valid list."
+
+    if document_data.qty_price and not str(document_data.qty_price).strip():
+        return "Qty / Price is required."
 
     if document_data.qty_price and not str(document_data.qty_price).strip():
         return "Qty / Price is required."
