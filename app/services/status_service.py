@@ -153,6 +153,39 @@ def attach_display_status(document: Document) -> Document:
             document.invoice_display = str(document.invoice_number)
     else:
         document.invoice_display = ""
+
+    # 1b. Per-invoice detail parsing (from invoice_numbers_json)
+    # New format: invoice_numbers_json contains array of objects with
+    # {invoiceNumber, blOrSi, vesselName, subCharges} per invoice.
+    # Old format: invoice_numbers_json contains just an array of strings.
+    document.invoice_details_parsed = []
+    if document.invoice_numbers_json:
+        try:
+            inv_data = json.loads(document.invoice_numbers_json)
+            if isinstance(inv_data, list) and inv_data:
+                first = inv_data[0]
+                if isinstance(first, dict) and "invoiceNumber" in first:
+                    # New per-invoice detail format
+                    for item in inv_data:
+                        document.invoice_details_parsed.append({
+                            "invoiceNumber": item.get("invoiceNumber", ""),
+                            "blOrSi": item.get("blOrSi", ""),
+                            "vesselName": item.get("vesselName", ""),
+                            "subCharges": item.get("subCharges", []),
+                        })
+        except Exception:
+            pass
+
+    # Fallback: if no per-invoice details were parsed, build from
+    # document-level fields for backward compatibility with old data.
+    if not document.invoice_details_parsed and document.invoice_list_parsed:
+        for inv_num in document.invoice_list_parsed:
+            document.invoice_details_parsed.append({
+                "invoiceNumber": inv_num,
+                "blOrSi": document.kode_bl or "",
+                "vesselName": document.vessel_name or "",
+                "subCharges": [],
+            })
         
     # 2. TC Details display helper & structured details
     document.tc_details_display = ""

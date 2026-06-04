@@ -71,9 +71,15 @@ async def submit_user_document(
     # Extract & sanitize PAM number
     pam_number = form_data.get("pam_number", "").strip()
     
-    # Extract multiple invoice numbers
-    invoice_numbers = form_data.getlist("invoice_number")
-    invoices = [inv.strip() for inv in invoice_numbers if inv.strip()]
+    # Extract invoice data from JSON (from frontend tabbed system)
+    invoice_data_json_str = form_data.get("invoice_data_json", "[]").strip()
+    try:
+        invoice_data_list = json.loads(invoice_data_json_str) if invoice_data_json_str else []
+    except json.JSONDecodeError:
+        invoice_data_list = []
+    
+    # Extract invoices from frontend data
+    invoices = [inv.get("invoiceNumber", "") for inv in invoice_data_list if inv.get("invoiceNumber", "").strip()]
     invoice_number_str = json.dumps(invoices)
     
     qty_price = form_data.get("qty_price", "").strip()
@@ -93,68 +99,50 @@ async def submit_user_document(
     
     if tc == "Yes":
         tc_type_val = form_data.get("tc_type", "").strip()
+
+        # Build tc_details from per-invoice subCharges in invoice_data_list
+        # (HTML form checkboxes are reset after each invoice save, so we read
+        # from the already-collected invoice_data_list instead)
+        tc_details_dict = {}
+        if invoice_data_list:
+            for inv_item in invoice_data_list:
+                for charge in inv_item.get("subCharges", []):
+                    charge_key = charge.get("name", "").lower().replace(" ", "_").replace("-", "_")
+                    if charge_key and charge_key not in tc_details_dict:
+                        tc_details_dict[charge_key] = {
+                            "checked": True,
+                            "label": charge.get("name", ""),
+                            "amount": charge.get("amount", ""),
+                        }
+        tc_details_json = json.dumps(tc_details_dict) if tc_details_dict else None
+
         if tc_type_val == "Import":
-            import_charge_options = (
-                ("lift_on_empty", "LIFT ON EMPTY"),
-                ("jasa_pelayanan_kepelabuhan", "JASA PELAYANAN KEPELABUHAN"),
-                ("handling_dokumen_30", "HANDLING DOKUMEN 3.0"),
-                ("jasa_emkl", "JASA EMKL"),
-                ("fuel_surcharge", "FUEL SURCHARGE"),
-                ("pemeriksaan_fisik_barang", "PEMERIKSAAN FISIK BARANG"),
-                ("pengurusan_dokumen_jalur_merah", "PENGURUSAN DOKUMEN JALUR MERAH"),
-                ("adm_closing_time", "ADM CLOSING TIME"),
-                ("denda_alih_kapal", "DENDA ALIH KAPAL"),
-                ("additional_handling_pindah_kapal", "ADDITIONAL HANDLING - PINDAH KAPAL"),
-                ("additional_handling_pindah_kapal_batal_muat", "ADDITIONAL HANDLING - PINDAH KAPAL BATAL MUAT"),
-                ("pindah_kapal_batal_muat_pkbm", "PINDAH KAPAL BATAL MUAT (PKBM)"),
-            )
-            for charge_key, charge_label in import_charge_options:
-                field_name = f"tc_import_{charge_key}"
-                tc_details_dict[charge_key] = {
-                    "checked": field_name in form_data,
-                    "label": charge_label,
-                    "amount": form_data.get(f"{field_name}_amount", "").strip()
-                }
-            tc_details_dict["other"] = {
-                "checked": "tc_import_other" in form_data,
-                "label": "Other",
-                "custom_name": form_data.get("tc_import_other_name", "").strip(),
-                "amount": form_data.get("tc_import_other_amount", "").strip()
-            }
-        elif tc_type_val == "Export":
-            export_charge_options = (
-                ("lift_off_empty", "LIFT OFF EMPTY"),
-                ("jasa_pelayanan_kepelabuhanan", "JASA PELAYANAN KEPELABUHANAN"),
-                ("handling_dokumen_23_handling_container", "HANDLING DOKUMEN 2.3,HANDLING CONTAINER"),
-                ("handling_bc25_hijau_kuning", "HANDLING BC.2.5 JALUR HIJAU / KUNING"),
-                ("handling_bc41_hijau_kuning", "HANDLING BC 4.1 JALUR HIJAU / KUNING"),
-                ("handling_bc40", "HANDLING BC 4.0"),
-                ("handling_bc25_jalur_merah", "HANDLING BC 2.5 JALUR MERAH"),
-                ("cargo_storage", "CARGO STORAGE"),
-            )
-            for charge_key, charge_label in export_charge_options:
-                field_name = f"tc_export_{charge_key}"
-                tc_details_dict[charge_key] = {
-                    "checked": field_name in form_data,
-                    "label": charge_label,
-                    "amount": form_data.get(f"{field_name}_amount", "").strip()
-                }
-            tc_details_dict["other"] = {
-                "checked": "tc_export_other" in form_data,
-                "label": "Other",
-                "custom_name": form_data.get("tc_export_other_name", "").strip(),
-                "amount": form_data.get("tc_export_other_amount", "").strip()
-            }
-        tc_details_json = json.dumps(tc_details_dict)
-        if tc_type_val == "Import":
-            kode_bl_val = form_data.get("kode_bl", "").strip()
+            # Extract BL from first invoice or from form
+            if invoice_data_list and len(invoice_data_list) > 0:
+                kode_bl_val = invoice_data_list[0].get("blOrSi", "").strip()
+            else:
+                kode_bl_val = form_data.get("kode_bl", "").strip()
             no_si_val = json.dumps([])
         elif tc_type_val == "Export":
             kode_bl_val = None
-            no_si_list = [si.strip() for si in form_data.getlist("no_si") if si.strip()]
+            # Extract SI from all invoices
+            if invoice_data_list and len(invoice_data_list) > 0:
+                no_si_list = [inv.get("blOrSi", "").strip() for inv in invoice_data_list if inv.get("blOrSi", "").strip()]
+            else:
+                no_si_list = []
             no_si_val = json.dumps(no_si_list)
-        vessel_name_val = form_data.get("vessel_name", "").strip()
         
+        # Extract vessel name from first invoice or form
+        if invoice_data_list and len(invoice_data_list) > 0:
+            vessel_name_val = invoice_data_list[0].get("vesselName", "").strip()
+        else:
+            vessel_name_val = form_data.get("vessel_name", "").strip()
+        
+    # Save the full per-invoice detail JSON (including blOrSi, vesselName,
+    # subCharges per invoice) into invoice_numbers_json so that the dashboard
+    # can display distinct details per invoice.
+    invoice_numbers_json_str = invoice_data_json_str if invoice_data_list else invoice_number_str
+
     cleaned_form_data = {
         "document_type": "PAM",
         "invoice_number": invoice_number_str,
@@ -164,7 +152,7 @@ async def submit_user_document(
         "status": status,
         "notes": notes,
         "pam_number": pam_number,
-        "invoice_numbers_json": invoice_number_str,
+        "invoice_numbers_json": invoice_numbers_json_str,
         "tc_type": tc_type_val,
         "tc_details": tc_details_json,
         "kode_bl": kode_bl_val,
@@ -178,6 +166,7 @@ async def submit_user_document(
         "invoice_list": invoices if invoices else [""],
         "tc_details_dict": tc_details_dict,
         "no_si_list": no_si_list if no_si_list else [""],
+        "invoice_data_json": invoice_data_json_str,
     }
 
     validation_error = _validate_document_submission(cleaned_form_data)
@@ -472,6 +461,7 @@ def _default_form_data() -> dict[str, any]:
         "kode_bl": "",
         "no_si_list": [""],
         "vessel_name": "",
+        "invoice_data_json": "[]",
     }
 
 
@@ -500,11 +490,14 @@ def _validate_document_submission(form_data: dict[str, any]) -> str | None:
 
     # Validate that we have at least one non-empty invoice number
     try:
-        inv_list = json.loads(document_data.invoice_number)
+        inv_list = json.loads(document_data.invoice_number) if document_data.invoice_number else []
         if not inv_list or not any(inv.strip() for inv in inv_list):
             return "At least one Invoice Number is required."
     except Exception:
         return "Invoice Number must be a valid list."
+
+    if document_data.qty_price and not str(document_data.qty_price).strip():
+        return "Qty / Price is required."
 
     if document_data.tc not in ALLOWED_TC_OPTIONS:
         return "TC must be Yes or No."
