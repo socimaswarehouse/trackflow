@@ -37,6 +37,7 @@
             --tf-radius: 1rem;
             --tf-radius-sm: 0.6rem;
             --tf-shadow: 0 8px 32px rgba(15, 52, 96, 0.10);
+            --tf-transition: 0.3s ease;
         }
 
         * { box-sizing: border-box; }
@@ -228,6 +229,278 @@
             color: var(--tf-muted);
             margin-top: 1.25rem;
         }
+
+        /* ── Invoice Tab System ──────────────────────────────── */
+        .invoice-tabs-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .invoice-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.9rem;
+            background: #f1f5f9;
+            border: 1.5px solid var(--tf-border);
+            border-radius: var(--tf-radius-sm);
+            cursor: pointer;
+            transition: all var(--tf-transition);
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--tf-muted);
+        }
+
+        .invoice-tab.active {
+            background: linear-gradient(135deg, var(--tf-primary) 0%, var(--tf-primary-mid) 100%);
+            border-color: var(--tf-primary);
+            color: #fff;
+        }
+
+        .invoice-tab:hover:not(.active) {
+            border-color: var(--tf-primary);
+            background: #f8fbff;
+        }
+
+        .invoice-tab.saved::after {
+            content: '✓';
+            font-size: 0.75rem;
+            margin-left: 0.3rem;
+            opacity: 0.8;
+        }
+
+        .invoice-tab .btn-close-tab {
+            background: none;
+            border: none;
+            color: inherit;
+            padding: 0;
+            cursor: pointer;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            transition: opacity var(--tf-transition);
+        }
+
+        .invoice-tab .btn-close-tab:hover {
+            opacity: 1;
+        }
+
+        .invoice-tab .btn-edit-tab {
+            background: none;
+            border: none;
+            color: inherit;
+            padding: 0;
+            cursor: pointer;
+            font-size: 0.75rem;
+            opacity: 0.7;
+            transition: opacity var(--tf-transition);
+            display: none;
+        }
+
+        .invoice-tab.saved .btn-edit-tab {
+            display: inline;
+        }
+
+        .invoice-tab.saved .btn-close-tab {
+            display: none;
+        }
+
+        .invoice-tab .btn-edit-tab:hover,
+        .invoice-tab .btn-close-tab:hover {
+            opacity: 1;
+        }
+
+        /* ── Summary Modal ────────────────────────────────────– */
+        .summary-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn var(--tf-transition);
+        }
+
+        .summary-modal-overlay.show {
+            display: flex;
+        }
+
+        .summary-modal {
+            background: var(--tf-card);
+            border-radius: var(--tf-radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp var(--tf-transition);
+        }
+
+        .summary-modal-header {
+            padding: 1.25rem;
+            border-bottom: 1.5px solid var(--tf-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-modal-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--tf-primary);
+        }
+
+        .summary-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--tf-muted);
+            transition: color var(--tf-transition);
+        }
+
+        .summary-modal-close:hover {
+            color: var(--tf-primary);
+        }
+
+        .summary-modal-body {
+            padding: 1.25rem;
+        }
+
+        .summary-item {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--tf-border);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--tf-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .summary-value {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--tf-text);
+            word-break: break-word;
+        }
+
+        .summary-charges {
+            background: var(--tf-accent-light);
+            border: 1px solid rgba(13, 122, 85, 0.18);
+            border-radius: var(--tf-radius-sm);
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .summary-charge-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .summary-charge-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .summary-modal-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1.5px solid var(--tf-border);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .summary-modal-footer button {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border-radius: var(--tf-radius-sm);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--tf-transition);
+        }
+
+        .btn-summary-cancel {
+            background: #f1f5f9;
+            color: var(--tf-text);
+        }
+
+        .btn-summary-cancel:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-summary-confirm {
+            background: linear-gradient(135deg, var(--tf-primary) 0%, var(--tf-primary-mid) 100%);
+            color: #fff;
+        }
+
+        .btn-summary-confirm:hover {
+            opacity: 0.9;
+        }
+
+        /* ── Validation Messages ────────────────────────────── */
+        .validation-message {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-top: 0.3rem;
+            animation: slideDown 0.2s ease;
+        }
+
+        .validation-error {
+            color: var(--tf-danger);
+        }
+
+        .validation-success {
+            color: var(--tf-accent);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (min-width: 768px) {
             .tf-page {
                 max-width: 560px;
@@ -293,7 +566,7 @@
                 </div>
                 {% endif %}
 
-                <form method="post" action="{{ request.url.path }}" novalidate>
+                <form method="post" action="{{ request.url.path }}" novalidate id="main-form">
                     <div class="tf-section-title">Document Information</div>
 
                     <!-- Composite PAM Number Input -->
@@ -344,348 +617,317 @@
                     </div>
 
                     <div id="shipment-details-section" style="display: none; padding-left: 1rem; border-left: 3px solid var(--tf-primary-mid); margin-bottom: 1.5rem;">
-                        <!-- Multiple Invoice Numbers -->
-                        <div class="mb-3">
-                            <label class="form-label">
-                                Invoice Number <span class="tf-required">*</span>
-                            </label>
-                            <div id="invoice-inputs-container">
-                                {% for inv in form_data.invoice_list %}
-                                <div class="input-group mb-2 invoice-input-row">
-                                    <input
-                                        type="text"
-                                        class="form-control"
-                                        name="invoice_number"
-                                        value="{{ inv }}"
-                                        autocomplete="off"
-                                        placeholder="Enter Invoice Number"
-                                    >
-                                    {% if not loop.first %}
-                                    <button type="button" class="btn btn-outline-danger remove-invoice-btn" onclick="this.closest('.invoice-input-row').remove();">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
+                        
+                        <!-- Invoice Tabs Display -->
+                        <div id="invoice-tabs-wrapper" style="display: none; margin-bottom: 1.5rem;">
+                            <div class="invoice-tabs-container" id="invoice-tabs-container"></div>
                         </div>
 
-                        <div id="import-bl-field" class="mb-3" style="display: none;">
-                            <label for="kode_bl" class="form-label">No BL <span class="tf-required">*</span></label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="kode_bl" name="kode_bl" value="{{ form_data.kode_bl }}" placeholder="Enter No BL" autocomplete="off">
-                                <button type="button" class="btn btn-outline-primary" id="shipment-save-btn-import">Save</button>
+                        <!-- Current Invoice Form -->
+                        <div id="current-invoice-form">
+                            <!-- Invoice Number -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Invoice Number <span class="tf-required">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="current-invoice-number"
+                                    name="invoice_number_input"
+                                    autocomplete="off"
+                                    placeholder="Enter Invoice Number"
+                                >
+                                <div id="invoice-validation" class="validation-message" style="display: none;"></div>
                             </div>
-                        </div>
 
-                        <div id="export-si-field" class="mb-3" style="display: none;">
-                            <label class="form-label">No SI <span class="tf-required">*</span></label>
-                            <div id="si-inputs-container">
-                                {% for si in form_data.no_si_list %}
-                                <div class="input-group mb-2 si-input-row">
-                                    <input
-                                        type="text"
-                                        class="form-control"
-                                        name="no_si"
-                                        value="{{ si }}"
-                                        placeholder="Enter No SI"
-                                        autocomplete="off"
-                                    >
-                                    {% if not loop.first %}
-                                    <button type="button" class="btn btn-outline-danger remove-si-btn" onclick="this.closest('.si-input-row').remove();">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
+                            <!-- No BL (Import) / No SI (Export) -->
+                            <div id="import-bl-field" class="mb-3" style="display: none;">
+                                <label for="kode_bl" class="form-label">No BL <span class="tf-required">*</span></label>
+                                <input type="text" class="form-control" id="kode_bl" name="kode_bl_input" placeholder="Enter No BL" autocomplete="off">
                             </div>
-                            <div class="d-flex gap-2 flex-wrap">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-si-btn">
-                                    <i class="bi bi-plus-lg"></i> Add No SI
+
+                            <div id="export-si-field" class="mb-3" style="display: none;">
+                                <label class="form-label">No SI <span class="tf-required">*</span></label>
+                                <input type="text" class="form-control" id="no_si_input" name="no_si_input" placeholder="Enter No SI" autocomplete="off">
+                            </div>
+
+                            <!-- Vessel Name -->
+                            <div class="mb-3">
+                                <label for="vessel_name" class="form-label">Vessel Name <span class="tf-required">*</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="vessel_name"
+                                    name="vessel_name_input"
+                                    placeholder="Enter Vessel Name"
+                                    autocomplete="off"
+                                >
+                            </div>
+
+                            <!-- Import Sub-charges -->
+                            <div id="tc-import-options" style="display: none;" class="mb-3">
+                                <label class="form-label text-muted d-block" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Import Sub-charges</label>
+                                
+                                <!-- LIFT ON EMPTY -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_lift_on_empty" name="tc_import_lift_on_empty">
+                                        <label class="form-check-label form-label m-0" for="tc_import_lift_on_empty">LIFT ON EMPTY</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_lift_on_empty_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- JASA PELAYANAN KEPELABUHAN -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_jasa_pelayanan_kepelabuhan" name="tc_import_jasa_pelayanan_kepelabuhan">
+                                        <label class="form-check-label form-label m-0" for="tc_import_jasa_pelayanan_kepelabuhan">JASA PELAYANAN KEPELABUHAN</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_jasa_pelayanan_kepelabuhan_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- HANDLING DOKUMEN 3.0 -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_handling_dokumen_30" name="tc_import_handling_dokumen_30">
+                                        <label class="form-check-label form-label m-0" for="tc_import_handling_dokumen_30">HANDLING DOKUMEN 3.0</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_handling_dokumen_30_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- JASA EMKL -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_jasa_emkl" name="tc_import_jasa_emkl">
+                                        <label class="form-check-label form-label m-0" for="tc_import_jasa_emkl">JASA EMKL</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_jasa_emkl_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- FUEL SURCHARGE -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_fuel_surcharge" name="tc_import_fuel_surcharge">
+                                        <label class="form-check-label form-label m-0" for="tc_import_fuel_surcharge">FUEL SURCHARGE</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_fuel_surcharge_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- PEMERIKSAAN FISIK BARANG -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_pemeriksaan_fisik_barang" name="tc_import_pemeriksaan_fisik_barang">
+                                        <label class="form-check-label form-label m-0" for="tc_import_pemeriksaan_fisik_barang">PEMERIKSAAN FISIK BARANG</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_pemeriksaan_fisik_barang_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- PENGURUSAN DOKUMEN JALUR MERAH -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_pengurusan_dokumen_jalur_merah" name="tc_import_pengurusan_dokumen_jalur_merah">
+                                        <label class="form-check-label form-label m-0" for="tc_import_pengurusan_dokumen_jalur_merah">PENGURUSAN DOKUMEN JALUR MERAH</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_pengurusan_dokumen_jalur_merah_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- ADM CLOSING TIME -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_adm_closing_time" name="tc_import_adm_closing_time">
+                                        <label class="form-check-label form-label m-0" for="tc_import_adm_closing_time">ADM CLOSING TIME</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_adm_closing_time_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- DENDA ALIH KAPAL -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_denda_alih_kapal" name="tc_import_denda_alih_kapal">
+                                        <label class="form-check-label form-label m-0" for="tc_import_denda_alih_kapal">DENDA ALIH KAPAL</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_denda_alih_kapal_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- ADDITIONAL HANDLING - PINDAH KAPAL -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_additional_handling_pindah_kapal" name="tc_import_additional_handling_pindah_kapal">
+                                        <label class="form-check-label form-label m-0" for="tc_import_additional_handling_pindah_kapal">ADDITIONAL HANDLING - PINDAH KAPAL</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_additional_handling_pindah_kapal_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- ADDITIONAL HANDLING - PINDAH KAPAL BATAL MUAT -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_additional_handling_pindah_kapal_batal_muat" name="tc_import_additional_handling_pindah_kapal_batal_muat">
+                                        <label class="form-check-label form-label m-0" for="tc_import_additional_handling_pindah_kapal_batal_muat">ADDITIONAL HANDLING - PINDAH KAPAL BATAL MUAT</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_additional_handling_pindah_kapal_batal_muat_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- PINDAH KAPAL BATAL MUAT (PKBM) -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_pindah_kapal_batal_muat_pkbm" name="tc_import_pindah_kapal_batal_muat_pkbm">
+                                        <label class="form-check-label form-label m-0" for="tc_import_pindah_kapal_batal_muat_pkbm">PINDAH KAPAL BATAL MUAT (PKBM)</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_pindah_kapal_batal_muat_pkbm_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- Other -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_other" name="tc_import_other">
+                                        <label class="form-check-label form-label m-0" for="tc_import_other">Other</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 240px;">
+                                        <input type="text" class="form-control form-control-sm mb-2" name="tc_import_other_name" placeholder="Nama charge">
+                                        <input type="number" class="form-control form-control-sm" name="tc_import_other_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Export Sub-charges -->
+                            <div id="tc-export-options" style="display: none;" class="mb-3">
+                                <label class="form-label text-muted d-block" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Export Sub-charges</label>
+                                
+                                <!-- LIFT OFF EMPTY -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_lift_off_empty" name="tc_export_lift_off_empty">
+                                        <label class="form-check-label form-label m-0" for="tc_export_lift_off_empty">LIFT OFF EMPTY</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_lift_off_empty_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- JASA PELAYANAN KEPELABUHANAN -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_jasa_pelayanan_kepelabuhanan" name="tc_export_jasa_pelayanan_kepelabuhanan">
+                                        <label class="form-check-label form-label m-0" for="tc_export_jasa_pelayanan_kepelabuhanan">JASA PELAYANAN KEPELABUHANAN</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_jasa_pelayanan_kepelabuhanan_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- HANDLING DOKUMEN 2.3,HANDLING CONTAINER -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_dokumen_23_handling_container" name="tc_export_handling_dokumen_23_handling_container">
+                                        <label class="form-check-label form-label m-0" for="tc_export_handling_dokumen_23_handling_container">HANDLING DOKUMEN 2.3,HANDLING CONTAINER</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_handling_dokumen_23_handling_container_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- HANDLING BC.2.5 JALUR HIJAU / KUNING -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc25_hijau_kuning" name="tc_export_handling_bc25_hijau_kuning">
+                                        <label class="form-check-label form-label m-0" for="tc_export_handling_bc25_hijau_kuning">HANDLING BC.2.5 JALUR HIJAU / KUNING</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc25_hijau_kuning_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- HANDLING BC 4.1 JALUR HIJAU / KUNING -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc41_hijau_kuning" name="tc_export_handling_bc41_hijau_kuning">
+                                        <label class="form-check-label form-label m-0" for="tc_export_handling_bc41_hijau_kuning">HANDLING BC 4.1 JALUR HIJAU / KUNING</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc41_hijau_kuning_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- HANDLING BC 4.0 -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc40" name="tc_export_handling_bc40">
+                                        <label class="form-check-label form-label m-0" for="tc_export_handling_bc40">HANDLING BC 4.0</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc40_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- HANDLING BC 2.5 JALUR MERAH -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc25_jalur_merah" name="tc_export_handling_bc25_jalur_merah">
+                                        <label class="form-check-label form-label m-0" for="tc_export_handling_bc25_jalur_merah">HANDLING BC 2.5 JALUR MERAH</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc25_jalur_merah_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- CARGO STORAGE -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_cargo_storage" name="tc_export_cargo_storage">
+                                        <label class="form-check-label form-label m-0" for="tc_export_cargo_storage">CARGO STORAGE</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 200px;">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_cargo_storage_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+
+                                <!-- Other -->
+                                <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
+                                    <div class="form-check m-0 ms-2">
+                                        <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_other" name="tc_export_other">
+                                        <label class="form-check-label form-label m-0" for="tc_export_other">Other</label>
+                                    </div>
+                                    <div class="tc-amount-container" style="display: none; max-width: 240px;">
+                                        <input type="text" class="form-control form-control-sm mb-2" name="tc_export_other_name" placeholder="Nama charge">
+                                        <input type="number" class="form-control form-control-sm" name="tc_export_other_amount" placeholder="Amount">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2 flex-wrap mt-3">
+                                <button type="button" class="btn btn-outline-primary" id="save-invoice-btn" style="display: none;">
+                                    <i class="bi bi-floppy"></i> Save Invoice
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="shipment-save-btn-export">Save</button>
+                                <button type="button" class="btn btn-outline-primary" id="add-invoice-btn" style="display: none;">
+                                    <i class="bi bi-plus-lg"></i> Add Invoice
+                                </button>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="vessel_name" class="form-label">Vessel Name <span class="tf-required">*</span></label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="vessel_name"
-                                name="vessel_name"
-                                value="{{ form_data.vessel_name or '' }}"
-                                placeholder="Enter Vessel Name"
-                                autocomplete="off"
-                            >
-                        </div>
-
-                        <!-- Import checkboxes & amounts -->
-                        <div id="tc-import-options" style="display: none;" class="mb-3">
-                            <label class="form-label text-muted d-block" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Import Sub-charges</label>
-                            
-                            <!-- LIFT ON EMPTY -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_lift_on_empty" name="tc_import_lift_on_empty" {% if form_data.tc_details_dict.get('lift_on_empty', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_lift_on_empty">LIFT ON EMPTY</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_lift_on_empty_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('lift_on_empty', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- JASA PELAYANAN KEPELABUHAN -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_jasa_pelayanan_kepelabuhan" name="tc_import_jasa_pelayanan_kepelabuhan" {% if form_data.tc_details_dict.get('jasa_pelayanan_kepelabuhan', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_jasa_pelayanan_kepelabuhan">JASA PELAYANAN KEPELABUHAN</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_jasa_pelayanan_kepelabuhan_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('jasa_pelayanan_kepelabuhan', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- HANDLING DOKUMEN 3.0 -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_handling_dokumen_30" name="tc_import_handling_dokumen_30" {% if form_data.tc_details_dict.get('handling_dokumen_30', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_handling_dokumen_30">HANDLING DOKUMEN 3.0</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_handling_dokumen_30_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling_dokumen_30', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- JASA EMKL -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_jasa_emkl" name="tc_import_jasa_emkl" {% if form_data.tc_details_dict.get('jasa_emkl', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_jasa_emkl">JASA EMKL</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_jasa_emkl_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('jasa_emkl', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- FUEL SURCHARGE -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_fuel_surcharge" name="tc_import_fuel_surcharge" {% if form_data.tc_details_dict.get('fuel_surcharge', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_fuel_surcharge">FUEL SURCHARGE</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_fuel_surcharge_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('fuel_surcharge', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- PEMERIKSAAN FISIK BARANG -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_pemeriksaan_fisik_barang" name="tc_import_pemeriksaan_fisik_barang" {% if form_data.tc_details_dict.get('pemeriksaan_fisik_barang', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_pemeriksaan_fisik_barang">PEMERIKSAAN FISIK BARANG</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_pemeriksaan_fisik_barang_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('pemeriksaan_fisik_barang', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- PENGURUSAN DOKUMEN JALUR MERAH -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_pengurusan_dokumen_jalur_merah" name="tc_import_pengurusan_dokumen_jalur_merah" {% if form_data.tc_details_dict.get('pengurusan_dokumen_jalur_merah', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_pengurusan_dokumen_jalur_merah">PENGURUSAN DOKUMEN JALUR MERAH</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_pengurusan_dokumen_jalur_merah_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('pengurusan_dokumen_jalur_merah', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- ADM CLOSING TIME -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_adm_closing_time" name="tc_import_adm_closing_time" {% if form_data.tc_details_dict.get('adm_closing_time', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_adm_closing_time">ADM CLOSING TIME</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_adm_closing_time_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('adm_closing_time', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- DENDA ALIH KAPAL -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_denda_alih_kapal" name="tc_import_denda_alih_kapal" {% if form_data.tc_details_dict.get('denda_alih_kapal', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_denda_alih_kapal">DENDA ALIH KAPAL</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_denda_alih_kapal_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('denda_alih_kapal', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- ADDITIONAL HANDLING - PINDAH KAPAL -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_additional_handling_pindah_kapal" name="tc_import_additional_handling_pindah_kapal" {% if form_data.tc_details_dict.get('additional_handling_pindah_kapal', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_additional_handling_pindah_kapal">ADDITIONAL HANDLING - PINDAH KAPAL</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_additional_handling_pindah_kapal_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('additional_handling_pindah_kapal', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- ADDITIONAL HANDLING - PINDAH KAPAL BATAL MUAT -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_additional_handling_pindah_kapal_batal_muat" name="tc_import_additional_handling_pindah_kapal_batal_muat" {% if form_data.tc_details_dict.get('additional_handling_pindah_kapal_batal_muat', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_additional_handling_pindah_kapal_batal_muat">ADDITIONAL HANDLING - PINDAH KAPAL BATAL MUAT</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_additional_handling_pindah_kapal_batal_muat_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('additional_handling_pindah_kapal_batal_muat', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- PINDAH KAPAL BATAL MUAT (PKBM) -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_pindah_kapal_batal_muat_pkbm" name="tc_import_pindah_kapal_batal_muat_pkbm" {% if form_data.tc_details_dict.get('pindah_kapal_batal_muat_pkbm', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_pindah_kapal_batal_muat_pkbm">PINDAH KAPAL BATAL MUAT (PKBM)</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_pindah_kapal_batal_muat_pkbm_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('pindah_kapal_batal_muat_pkbm', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- Other -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_import_other" name="tc_import_other" {% if form_data.tc_details_dict.get('other', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_import_other">Other</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 240px;">
-                                    <input type="text" class="form-control form-control-sm mb-2" name="tc_import_other_name" placeholder="Nama charge" value="{{ form_data.tc_details_dict.get('other', {}).get('custom_name', '') }}">
-                                    <input type="number" class="form-control form-control-sm" name="tc_import_other_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('other', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="subcharges-save-btn-import">
-                                Save
-                            </button>
-                        </div>
-
-                        <!-- Export checkboxes & amounts -->
-                        <div id="tc-export-options" style="display: none;" class="mb-3">
-                            <label class="form-label text-muted d-block" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Export Sub-charges</label>
-                            
-                            <!-- LIFT OFF EMPTY -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_lift_off_empty" name="tc_export_lift_off_empty" {% if form_data.tc_details_dict.get('lift_off_empty', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_lift_off_empty">LIFT OFF EMPTY</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_lift_off_empty_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('lift_off_empty', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- JASA PELAYANAN KEPELABUHANAN -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_jasa_pelayanan_kepelabuhanan" name="tc_export_jasa_pelayanan_kepelabuhanan" {% if form_data.tc_details_dict.get('jasa_pelayanan_kepelabuhanan', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_jasa_pelayanan_kepelabuhanan">JASA PELAYANAN KEPELABUHANAN</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_jasa_pelayanan_kepelabuhanan_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('jasa_pelayanan_kepelabuhanan', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- HANDLING DOKUMEN 2.3,HANDLING CONTAINER -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_dokumen_23_handling_container" name="tc_export_handling_dokumen_23_handling_container" {% if form_data.tc_details_dict.get('handling_dokumen_23_handling_container', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_handling_dokumen_23_handling_container">HANDLING DOKUMEN 2.3,HANDLING CONTAINER</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_handling_dokumen_23_handling_container_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling_dokumen_23_handling_container', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- HANDLING BC.2.5 JALUR HIJAU / KUNING -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc25_hijau_kuning" name="tc_export_handling_bc25_hijau_kuning" {% if form_data.tc_details_dict.get('handling_bc25_hijau_kuning', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_handling_bc25_hijau_kuning">HANDLING BC.2.5 JALUR HIJAU / KUNING</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc25_hijau_kuning_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling_bc25_hijau_kuning', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- HANDLING BC 4.1 JALUR HIJAU / KUNING -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc41_hijau_kuning" name="tc_export_handling_bc41_hijau_kuning" {% if form_data.tc_details_dict.get('handling_bc41_hijau_kuning', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_handling_bc41_hijau_kuning">HANDLING BC 4.1 JALUR HIJAU / KUNING</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc41_hijau_kuning_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling_bc41_hijau_kuning', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- HANDLING BC 4.0 -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc40" name="tc_export_handling_bc40" {% if form_data.tc_details_dict.get('handling_bc40', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_handling_bc40">HANDLING BC 4.0</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc40_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling_bc40', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- HANDLING BC 2.5 JALUR MERAH -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_handling_bc25_jalur_merah" name="tc_export_handling_bc25_jalur_merah" {% if form_data.tc_details_dict.get('handling_bc25_jalur_merah', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_handling_bc25_jalur_merah">HANDLING BC 2.5 JALUR MERAH</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_handling_bc25_jalur_merah_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('handling_bc25_jalur_merah', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- CARGO STORAGE -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_cargo_storage" name="tc_export_cargo_storage" {% if form_data.tc_details_dict.get('cargo_storage', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_cargo_storage">CARGO STORAGE</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 200px;">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_cargo_storage_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('cargo_storage', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <!-- Other -->
-                            <div class="tc-item-row d-flex align-items-center mb-2 justify-content-between p-2">
-                                <div class="form-check m-0 ms-2">
-                                    <input class="form-check-input tc-checkbox" type="checkbox" id="tc_export_other" name="tc_export_other" {% if form_data.tc_details_dict.get('other', {}).get('checked') %}checked{% endif %}>
-                                    <label class="form-check-label form-label m-0" for="tc_export_other">Other</label>
-                                </div>
-                                <div class="tc-amount-container" style="display: none; max-width: 240px;">
-                                    <input type="text" class="form-control form-control-sm mb-2" name="tc_export_other_name" placeholder="Nama charge" value="{{ form_data.tc_details_dict.get('other', {}).get('custom_name', '') }}">
-                                    <input type="number" class="form-control form-control-sm" name="tc_export_other_amount" placeholder="Amount" value="{{ form_data.tc_details_dict.get('other', {}).get('amount', '') }}">
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="subcharges-save-btn-export">
-                                Save
-                            </button>
-                        </div>
-
-                        <div id="add-invoice-action" style="display: none;" class="mb-3">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="add-invoice-btn">
-                                <i class="bi bi-plus-lg"></i> Add Invoice
-                            </button>
                         </div>
 
                     </div>
@@ -741,6 +983,9 @@
                         >{{ form_data.notes }}</textarea>
                     </div>
 
+                    <!-- Hidden field to store invoice data -->
+                    <input type="hidden" id="invoice-data-json" name="invoice_data_json" value="">
+
                     <button type="submit" class="tf-submit-btn">
                         <i class="bi bi-send-fill"></i>
                         Submit Data Dokumen
@@ -754,7 +999,98 @@
         </footer>
     </div>
 
+    <!-- Summary Modal -->
+    <div class="summary-modal-overlay" id="summary-modal-overlay">
+        <div class="summary-modal">
+            <div class="summary-modal-header">
+                <h3>Review Invoice Data</h3>
+                <button type="button" class="summary-modal-close" id="summary-modal-close">&times;</button>
+            </div>
+            <div class="summary-modal-body" id="summary-modal-body"></div>
+            <div class="summary-modal-footer">
+                <button type="button" class="summary-modal-footer button btn-summary-cancel" id="summary-btn-cancel">Cancel</button>
+                <button type="button" class="summary-modal-footer button btn-summary-confirm" id="summary-btn-confirm">Confirm & Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // ── Invoice Management System ─────────────────────────────
+        class InvoiceManager {
+            constructor() {
+                this.invoices = [];
+                this.currentTabId = null;
+                this.shipmentType = null;
+            }
+
+            addInvoice(data) {
+                const id = Date.now().toString();
+                const invoice = {
+                    id,
+                    invoiceNumber: data.invoiceNumber,
+                    blOrSi: data.blOrSi,
+                    vesselName: data.vesselName,
+                    subCharges: data.subCharges,
+                    timestamp: new Date()
+                };
+                this.invoices.push(invoice);
+                return id;
+            }
+
+            getInvoice(id) {
+                return this.invoices.find(inv => inv.id === id);
+            }
+
+            updateInvoice(id, data) {
+                const invoice = this.getInvoice(id);
+                if (invoice) {
+                    invoice.invoiceNumber = data.invoiceNumber;
+                    invoice.blOrSi = data.blOrSi;
+                    invoice.vesselName = data.vesselName;
+                    invoice.subCharges = data.subCharges;
+                }
+            }
+
+            deleteInvoice(id) {
+                this.invoices = this.invoices.filter(inv => inv.id !== id);
+            }
+
+            getAllInvoices() {
+                return this.invoices;
+            }
+
+            clear() {
+                this.invoices = [];
+                this.currentTabId = null;
+            }
+        }
+
+        const invoiceManager = new InvoiceManager();
+
+        // ── DOM Elements ────────────────────────────────────────
+        const tcTypeSelect = document.getElementById('tc_type');
+        const shipmentDetailsSection = document.getElementById('shipment-details-section');
+        const importBlField = document.getElementById('import-bl-field');
+        const exportSiField = document.getElementById('export-si-field');
+        const tcImportOptions = document.getElementById('tc-import-options');
+        const tcExportOptions = document.getElementById('tc-export-options');
+        const currentInvoiceNumber = document.getElementById('current-invoice-number');
+        const kodeBl = document.getElementById('kode_bl');
+        const noSiInput = document.getElementById('no_si_input');
+        const vesselName = document.getElementById('vessel_name');
+        const saveInvoiceBtn = document.getElementById('save-invoice-btn');
+        const addInvoiceBtn = document.getElementById('add-invoice-btn');
+        const invoiceTabsWrapper = document.getElementById('invoice-tabs-wrapper');
+        const invoiceTabsContainer = document.getElementById('invoice-tabs-container');
+        const summaryModalOverlay = document.getElementById('summary-modal-overlay');
+        const summaryModalBody = document.getElementById('summary-modal-body');
+        const summaryBtnCancel = document.getElementById('summary-btn-cancel');
+        const summaryBtnConfirm = document.getElementById('summary-btn-confirm');
+        const summaryModalClose = document.getElementById('summary-modal-close');
+        const mainForm = document.getElementById('main-form');
+
+        let pendingInvoiceData = null;
+
         // ── Qty/Price Auto-format (thousands) ─────────────────────────────
         (function() {
             const qtyInput    = document.getElementById('qty_price_display');
@@ -762,19 +1098,16 @@
             if (!qtyInput || !currSelect) return;
 
             function getRawNumber(val) {
-                // Strip all non-digit and non-dot/comma, keep only digits
                 return val.replace(/[^\d]/g, '');
             }
 
             function formatIDR(raw) {
                 if (!raw) return '';
-                // Pisahkan dengan titik setiap 3 digit (format Indonesia)
                 return raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
             function formatUSD(raw) {
                 if (!raw) return '';
-                // Pisahkan dengan koma setiap 3 digit (format US)
                 return raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             }
 
@@ -785,21 +1118,16 @@
                 const currency = currSelect.value;
                 const formatted = currency === 'USD' ? formatUSD(raw) : formatIDR(raw);
                 qtyInput.value = formatted;
-                // Adjust cursor position
                 const diff = formatted.length - prevLen;
                 qtyInput.setSelectionRange(caret + diff, caret + diff);
             }
 
-            // Format on input
             qtyInput.addEventListener('input', formatValue);
-
-            // Re-format when currency changes
             currSelect.addEventListener('change', function() {
                 const raw = getRawNumber(qtyInput.value);
                 qtyInput.value = currSelect.value === 'USD' ? formatUSD(raw) : formatIDR(raw);
             });
 
-            // Format existing value on load
             if (qtyInput.value) {
                 const raw = getRawNumber(qtyInput.value);
                 qtyInput.value = currSelect.value === 'USD' ? formatUSD(raw) : formatIDR(raw);
@@ -807,12 +1135,11 @@
         })();
 
         document.addEventListener('DOMContentLoaded', function() {
-            // --- 1. PAM Number prefix/suffix logic ---
+            // --- PAM Number prefix/suffix logic ---
             const suffixInput = document.getElementById('pam_number_suffix');
             const hiddenPamInput = document.getElementById('pam_number');
             const prefixInput = document.getElementById('pam_number_prefix');
 
-            // Auto-fill Month/Year if suffix is empty
             if (!suffixInput.value) {
                 const now = new Date();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -832,179 +1159,331 @@
 
             prefixInput.addEventListener('input', updatePamNumber);
 
-            // --- 2. Multiple Invoice Numbers ---
-            document.getElementById('add-invoice-btn').addEventListener('click', function() {
-                const container = document.getElementById('invoice-inputs-container');
-                const newRow = document.createElement('div');
-                newRow.className = 'input-group mb-2 invoice-input-row';
-                newRow.innerHTML = `
-                    <input
-                        type="text"
-                        class="form-control"
-                        name="invoice_number"
-                        required
-                        autocomplete="off"
-                        placeholder="Enter Invoice Number"
-                    >
-                    <button type="button" class="btn btn-outline-danger remove-invoice-btn">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                `;
-                container.appendChild(newRow);
-
-                newRow.querySelector('.remove-invoice-btn').addEventListener('click', function() {
-                    newRow.remove();
-                });
+            // ── Shipment Type Change Handler ────────────────────
+            tcTypeSelect.addEventListener('change', function() {
+                invoiceManager.shipmentType = this.value;
+                updateVisibility();
+                resetCurrentInvoiceForm();
+                renderInvoiceTabs();
             });
 
-            // --- 3. Multiple No SI ---
-            document.getElementById('add-si-btn').addEventListener('click', function() {
-                const container = document.getElementById('si-inputs-container');
-                const newRow = document.createElement('div');
-                newRow.className = 'input-group mb-2 si-input-row';
-                newRow.innerHTML = `
-                    <input
-                        type="text"
-                        class="form-control"
-                        name="no_si"
-                        required
-                        autocomplete="off"
-                        placeholder="Enter No SI"
-                    >
-                    <button type="button" class="btn btn-outline-danger remove-si-btn">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                `;
-                container.appendChild(newRow);
-
-                newRow.querySelector('.remove-si-btn').addEventListener('click', function() {
-                    newRow.remove();
-                });
-            });
-
-            // --- 4. Shipment Conditional Visibility & Validation Logic ---
-            let shipmentSaved = false;
-            let subChargesSaved = false;
-
-            function hasCheckedCharges() {
-                return Array.from(document.querySelectorAll('.tc-checkbox')).some(cb => cb.checked);
-            }
-
-            function revealSubCharges() {
-                shipmentSaved = true;
-                updateVisibility();
-                toggleAmountFields();
-            }
-
-            function revealAddInvoice() {
-                subChargesSaved = true;
-                updateVisibility();
-            }
-
-            function updateVisibility() {
-                const tcTypeVal = document.getElementById('tc_type').value;
-                const shipmentSection = document.getElementById('shipment-details-section');
-                const importBlField = document.getElementById('import-bl-field');
-                const exportSiField = document.getElementById('export-si-field');
-                const importOpts = document.getElementById('tc-import-options');
-                const exportOpts = document.getElementById('tc-export-options');
-                const addInvoiceAction = document.getElementById('add-invoice-action');
-                const vesselField = document.getElementById('vessel_name');
-                const invoiceContainer = document.getElementById('invoice-inputs-container');
-                
-                if (tcTypeVal === 'Import' || tcTypeVal === 'Export') {
-                    shipmentSection.style.display = 'block';
-                    importBlField.style.display = tcTypeVal === 'Import' ? 'block' : 'none';
-                    exportSiField.style.display = tcTypeVal === 'Export' ? 'block' : 'none';
-                    importOpts.style.display = tcTypeVal === 'Import' && shipmentSaved ? 'block' : 'none';
-                    exportOpts.style.display = tcTypeVal === 'Export' && shipmentSaved ? 'block' : 'none';
-                    setInvoiceInputsRequired(invoiceContainer, true);
-                    setInputsRequired(importBlField, tcTypeVal === 'Import');
-                    setInputsRequired(exportSiField, tcTypeVal === 'Export');
-                    setInputsRequired(importOpts, tcTypeVal === 'Import' && shipmentSaved);
-                    setInputsRequired(exportOpts, tcTypeVal === 'Export' && shipmentSaved);
-                    if (addInvoiceAction) addInvoiceAction.style.display = shipmentSaved && subChargesSaved ? 'block' : 'none';
-                    if (vesselField) vesselField.required = true;
-                } else {
-                    shipmentSection.style.display = 'none';
-                    setInputsRequired(shipmentSection, false);
-                    setInvoiceInputsRequired(invoiceContainer, false);
-                    if (addInvoiceAction) addInvoiceAction.style.display = 'none';
-                    if (vesselField) vesselField.required = false;
-                }
-            }
-
-            function setInvoiceInputsRequired(container, isRequired) {
-                if (!container) return;
-                container.querySelectorAll('input[name="invoice_number"]').forEach(el => {
-                    el.required = isRequired;
-                });
-            }
-
-            function setInputsRequired(container, isRequired) {
-                if (!container) return;
-                container.querySelectorAll('input, select').forEach(el => {
-                    if (el.type === 'checkbox') return;
-                    if (el.closest('.tc-amount-container')) {
-                        const row = el.closest('.tc-item-row');
-                        const cb = row.querySelector('.tc-checkbox');
-                        el.required = isRequired && cb.checked;
-                    } else {
-                        el.required = isRequired;
-                    }
-                });
-            }
-
-            function toggleAmountFields() {
-                document.querySelectorAll('.tc-checkbox').forEach(cb => {
-                    const row = cb.closest('.tc-item-row');
-                    const amountContainer = row.querySelector('.tc-amount-container');
-                    const amountInput = amountContainer.querySelector('input');
-                    if (cb.checked) {
-                        row.classList.add('checked');
-                        amountContainer.style.display = 'block';
-                    } else {
-                        row.classList.remove('checked');
-                        amountContainer.style.display = 'none';
-                        amountContainer.querySelectorAll('input').forEach(input => {
-                            input.value = '';
-                        });
-                    }
-                });
-                
-                // Re-evaluate required states since checkbox states might have changed
-                updateVisibility();
-            }
-
-            // Event Listeners for shipment visibility & amounts
-            document.getElementById('tc_type').addEventListener('change', function() {
-                shipmentSaved = false;
-                subChargesSaved = false;
-                updateVisibility();
-                toggleAmountFields();
-            });
-
-            document.getElementById('shipment-save-btn-import').addEventListener('click', revealSubCharges);
-            document.getElementById('shipment-save-btn-export').addEventListener('click', revealSubCharges);
-            document.getElementById('subcharges-save-btn-import').addEventListener('click', revealAddInvoice);
-            document.getElementById('subcharges-save-btn-export').addEventListener('click', revealAddInvoice);
-
+            // ── Checkbox Change Handler (Sub-charges) ──────────
             document.querySelectorAll('.tc-checkbox').forEach(cb => {
-                cb.addEventListener('change', toggleAmountFields);
+                cb.addEventListener('change', function() {
+                    toggleAmountFields();
+                });
             });
 
-            // Ensure correct state on page load (e.g. after validation error)
-            shipmentSaved = hasCheckedCharges();
-            subChargesSaved = document.querySelectorAll('.invoice-input-row').length > 1;
+            // ── Save Invoice Handler ────────────────────────────
+            saveInvoiceBtn.addEventListener('click', function() {
+                const invoiceNumber = currentInvoiceNumber.value.trim();
+                const vesselNameVal = vesselName.value.trim();
+                const blOrSi = invoiceManager.shipmentType === 'Import' 
+                    ? kodeBl.value.trim() 
+                    : noSiInput.value.trim();
+
+                // Collect sub-charges
+                const subCharges = collectSubCharges();
+
+                // Show summary modal
+                showSummaryModal({
+                    invoiceNumber,
+                    blOrSi,
+                    vesselNameVal,
+                    subCharges
+                });
+            });
+
+            // ── Add Invoice Handler ─────────────────────────────
+            addInvoiceBtn.addEventListener('click', function() {
+                resetCurrentInvoiceForm();
+                renderInvoiceTabs();
+            });
+
+            // ── Summary Modal Handlers ──────────────────────────
+            summaryBtnCancel.addEventListener('click', closeSummaryModal);
+            summaryModalClose.addEventListener('click', closeSummaryModal);
+
+            summaryBtnConfirm.addEventListener('click', function() {
+                if (!pendingInvoiceData) return;
+
+                const invoiceNumber = pendingInvoiceData.invoiceNumber;
+
+                // Check for duplicate invoice numbers
+                const isDuplicate = invoiceManager.getAllInvoices().some(
+                    inv => inv.invoiceNumber === invoiceNumber
+                );
+
+                if (isDuplicate) {
+                    showValidationMessage('invoice-validation', 
+                        'Invoice number already exists', 'error');
+                    closeSummaryModal();
+                    return;
+                }
+
+                // Add invoice to manager
+                invoiceManager.addInvoice(pendingInvoiceData);
+                closeSummaryModal();
+                renderInvoiceTabs();
+                resetCurrentInvoiceForm();
+            });
+
+            // ── Form Submit Handler ─────────────────────────────
+            mainForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Convert all invoices to JSON
+                const invoiceDataJson = JSON.stringify(invoiceManager.getAllInvoices());
+                document.getElementById('invoice-data-json').value = invoiceDataJson;
+
+                this.submit();
+            });
+
+            // Initial visibility update
             updateVisibility();
             toggleAmountFields();
-
-            // Intercept form submit to construct final PAM Number
-            const form = document.querySelector('form');
-            form.addEventListener('submit', function(e) {
-                updatePamNumber();
-            });
         });
+
+        // ── Helper Functions ─────────────────────────────────────────
+        function updateVisibility() {
+            const tcTypeVal = tcTypeSelect.value;
+
+            if (tcTypeVal === 'Import' || tcTypeVal === 'Export') {
+                shipmentDetailsSection.style.display = 'block';
+                importBlField.style.display = tcTypeVal === 'Import' ? 'block' : 'none';
+                exportSiField.style.display = tcTypeVal === 'Export' ? 'block' : 'none';
+                tcImportOptions.style.display = tcTypeVal === 'Import' ? 'block' : 'none';
+                tcExportOptions.style.display = tcTypeVal === 'Export' ? 'block' : 'none';
+                saveInvoiceBtn.style.display = 'block';
+            } else {
+                shipmentDetailsSection.style.display = 'none';
+                saveInvoiceBtn.style.display = 'none';
+                addInvoiceBtn.style.display = 'none';
+                invoiceTabsWrapper.style.display = 'none';
+            }
+        }
+
+        function toggleAmountFields() {
+            document.querySelectorAll('.tc-checkbox').forEach(cb => {
+                const row = cb.closest('.tc-item-row');
+                const amountContainer = row.querySelector('.tc-amount-container');
+                if (cb.checked) {
+                    row.classList.add('checked');
+                    amountContainer.style.display = 'block';
+                } else {
+                    row.classList.remove('checked');
+                    amountContainer.style.display = 'none';
+                    amountContainer.querySelectorAll('input').forEach(input => {
+                        input.value = '';
+                    });
+                }
+            });
+        }
+
+        function collectSubCharges() {
+            const subCharges = [];
+            const tcTypeVal = invoiceManager.shipmentType;
+            const prefix = tcTypeVal === 'Import' ? 'tc_import_' : 'tc_export_';
+
+            document.querySelectorAll(`input[name^="${prefix}"]`).forEach(input => {
+                if (input.type === 'checkbox' && input.checked) {
+                    const chargeName = input.name.replace(prefix, '').replace(/_/g, ' ').toUpperCase();
+                    const amountInput = document.querySelector(
+                        `input[name="${input.name}_amount"]`
+                    );
+                    const amountValue = amountInput ? amountInput.value : '';
+                    
+                    // Handle "Other" charge specially
+                    if (input.name.includes('other')) {
+                        const nameInput = document.querySelector(`input[name="${prefix}other_name"]`);
+                        subCharges.push({
+                            name: nameInput ? nameInput.value : chargeName,
+                            amount: amountValue
+                        });
+                    } else {
+                        subCharges.push({
+                            name: chargeName,
+                            amount: amountValue
+                        });
+                    }
+                }
+            });
+
+            return subCharges;
+        }
+
+        function resetCurrentInvoiceForm() {
+            currentInvoiceNumber.value = '';
+            kodeBl.value = '';
+            noSiInput.value = '';
+            vesselName.value = '';
+
+            // Reset all checkboxes
+            document.querySelectorAll('.tc-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+
+            toggleAmountFields();
+            showValidationMessage('invoice-validation', '', '');
+        }
+
+        function renderInvoiceTabs() {
+            const invoices = invoiceManager.getAllInvoices();
+
+            if (invoices.length === 0) {
+                invoiceTabsWrapper.style.display = 'none';
+                addInvoiceBtn.style.display = 'none';
+                saveInvoiceBtn.style.display = 'block';
+                return;
+            }
+
+            invoiceTabsWrapper.style.display = 'block';
+            invoiceTabsContainer.innerHTML = '';
+
+            invoices.forEach((invoice, index) => {
+                const tabDiv = document.createElement('div');
+                tabDiv.className = 'invoice-tab saved active';
+                tabDiv.setAttribute('data-id', invoice.id);
+
+                tabDiv.innerHTML = `
+                    <span class="tab-label">Invoice ${index + 1}</span>
+                    <span class="tab-number">${invoice.invoiceNumber}</span>
+                    <button type="button" class="btn-edit-tab" title="Edit this invoice">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                `;
+
+                tabDiv.addEventListener('click', function(e) {
+                    if (!e.target.closest('.btn-edit-tab')) return;
+                    editInvoice(invoice.id);
+                });
+
+                invoiceTabsContainer.appendChild(tabDiv);
+            });
+
+            // Add button to add new invoice
+            addInvoiceBtn.style.display = 'block';
+            saveInvoiceBtn.style.display = 'block';
+        }
+
+        function editInvoice(id) {
+            const invoice = invoiceManager.getInvoice(id);
+            if (!invoice) return;
+
+            // Populate form fields
+            currentInvoiceNumber.value = invoice.invoiceNumber;
+            vesselName.value = invoice.vesselName;
+
+            if (invoiceManager.shipmentType === 'Import') {
+                kodeBl.value = invoice.blOrSi;
+            } else {
+                noSiInput.value = invoice.blOrSi;
+            }
+
+            // Restore sub-charges
+            restoreSubCharges(invoice.subCharges);
+
+            // Remove this invoice from list for editing
+            invoiceManager.deleteInvoice(id);
+            renderInvoiceTabs();
+        }
+
+        function restoreSubCharges(subCharges) {
+            // Reset all first
+            document.querySelectorAll('.tc-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+
+            // Restore checked items
+            subCharges.forEach(charge => {
+                const tcTypeVal = invoiceManager.shipmentType;
+                const prefix = tcTypeVal === 'Import' ? 'tc_import_' : 'tc_export_';
+                const chargeName = charge.name.toLowerCase().replace(/ /g, '_');
+                const checkbox = document.querySelector(`input[name="${prefix}${chargeName}"]`);
+
+                if (checkbox) {
+                    checkbox.checked = true;
+                    const amountInput = document.querySelector(
+                        `input[name="${prefix}${chargeName}_amount"]`
+                    );
+                    if (amountInput) {
+                        amountInput.value = charge.amount;
+                    }
+                }
+            });
+
+            toggleAmountFields();
+        }
+
+        function showSummaryModal(data) {
+            pendingInvoiceData = {
+                invoiceNumber: data.invoiceNumber,
+                blOrSi: data.blOrSi,
+                vesselName: data.vesselNameVal,
+                subCharges: data.subCharges
+            };
+
+            const tcTypeVal = invoiceManager.shipmentType;
+            const blOrSiLabel = tcTypeVal === 'Import' ? 'No BL' : 'No SI';
+
+            let chargesHTML = '';
+            if (data.subCharges.length > 0) {
+                chargesHTML = `
+                    <div class="summary-charges">
+                        <strong style="font-size: 0.75rem;">Sub-Charges:</strong>
+                        ${data.subCharges.map(charge => `
+                            <div class="summary-charge-item">
+                                <span>${charge.name}</span>
+                                <span>${charge.amount || '-'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            summaryModalBody.innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-label">Invoice Number</div>
+                    <div class="summary-value">${data.invoiceNumber}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">${blOrSiLabel}</div>
+                    <div class="summary-value">${data.blOrSi}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Vessel Name</div>
+                    <div class="summary-value">${data.vesselNameVal}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Sub-Charges</div>
+                    <div class="summary-value">
+                        ${chargesHTML || '<em>None selected</em>'}
+                    </div>
+                </div>
+            `;
+
+            summaryModalOverlay.classList.add('show');
+        }
+
+        function closeSummaryModal() {
+            summaryModalOverlay.classList.remove('show');
+            pendingInvoiceData = null;
+        }
+
+        function showValidationMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            if (!message) {
+                element.style.display = 'none';
+                element.textContent = '';
+                return;
+            }
+
+            element.textContent = message;
+            element.className = `validation-message validation-${type}`;
+            element.style.display = 'flex';
+        }
     </script>
 </body>
 </html>
