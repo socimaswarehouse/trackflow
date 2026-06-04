@@ -826,6 +826,7 @@
 
         <div id="scanner-area">
             <div id="qr-reader" style="width: 100%; border-radius: 0.75rem; overflow: hidden; background: #fafbfe;"></div>
+            <div id="camera-error-msg" style="display: none;"></div>
         </div>
 
         <div id="qr-upload-container" style="display: none; text-align: center; padding: 2.5rem 1.5rem; border: 2px dashed #cbd5e1; border-radius: 0.75rem; background: #f8fafc; cursor: pointer;">
@@ -976,11 +977,17 @@
     
     function switchMode(mode) {
         stopScanner().then(() => {
+            const qrReaderEl = document.getElementById('qr-reader');
+            const errorMsgEl = document.getElementById('camera-error-msg');
+
             if (mode === 'camera') {
                 if (btnScanCam) btnScanCam.classList.add('active');
                 if (btnScanFile) btnScanFile.classList.remove('active');
                 if (scannerArea) scannerArea.style.display = 'block';
                 if (uploadContainer) uploadContainer.style.display = 'none';
+                
+                if (qrReaderEl) qrReaderEl.style.display = 'block';
+                if (errorMsgEl) errorMsgEl.style.display = 'none';
                 
                 const qrSuccessCallback = (decodedText, decodedResult) => {
                     if (decodedText) {
@@ -995,14 +1002,16 @@
                 html5QrCode.start({ facingMode: "environment" }, config, qrSuccessCallback)
                     .catch(err => {
                         console.error("Camera access error:", err);
-                        if (scannerArea) {
-                            scannerArea.innerHTML = `
+                        if (qrReaderEl) qrReaderEl.style.display = 'none';
+                        if (errorMsgEl) {
+                            errorMsgEl.innerHTML = `
                                 <div class="text-center py-4 text-danger">
                                     <i class="bi bi-camera-video-off-fill fs-2"></i>
                                     <p class="mt-2 fw-semibold">Tidak dapat mengakses Kamera.</p>
                                     <p style="font-size: 0.8rem; color: var(--tf-muted);">Pastikan izin kamera telah diberikan atau gunakan opsi Upload File.</p>
                                 </div>
                             `;
+                            errorMsgEl.style.display = 'block';
                         }
                     });
             } else {
@@ -1032,7 +1041,7 @@
                 html5QrCode = new Html5Qrcode("qr-reader");
             }
             
-            html5QrCode.scanFile(imageFile, true)
+            html5QrCode.scanFile(imageFile, false)
                 .then(decodedText => {
                     window.location.href = decodedText;
                 })
