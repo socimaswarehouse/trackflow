@@ -71,9 +71,15 @@ async def submit_user_document(
     # Extract & sanitize PAM number
     pam_number = form_data.get("pam_number", "").strip()
     
-    # Extract multiple invoice numbers
-    invoice_numbers = form_data.getlist("invoice_number")
-    invoices = [inv.strip() for inv in invoice_numbers if inv.strip()]
+    # Extract invoice data from JSON (from frontend tabbed system)
+    invoice_data_json_str = form_data.get("invoice_data_json", "[]").strip()
+    try:
+        invoice_data_list = json.loads(invoice_data_json_str) if invoice_data_json_str else []
+    except json.JSONDecodeError:
+        invoice_data_list = []
+    
+    # Extract invoices from frontend data
+    invoices = [inv.get("invoiceNumber", "") for inv in invoice_data_list if inv.get("invoiceNumber", "").strip()]
     invoice_number_str = json.dumps(invoices)
     
     qty_price = form_data.get("qty_price", "").strip()
@@ -147,13 +153,26 @@ async def submit_user_document(
             }
         tc_details_json = json.dumps(tc_details_dict)
         if tc_type_val == "Import":
-            kode_bl_val = form_data.get("kode_bl", "").strip()
+            # Extract BL from first invoice or from form
+            if invoice_data_list and len(invoice_data_list) > 0:
+                kode_bl_val = invoice_data_list[0].get("blOrSi", "").strip()
+            else:
+                kode_bl_val = form_data.get("kode_bl", "").strip()
             no_si_val = json.dumps([])
         elif tc_type_val == "Export":
             kode_bl_val = None
-            no_si_list = [si.strip() for si in form_data.getlist("no_si") if si.strip()]
+            # Extract SI from all invoices
+            if invoice_data_list and len(invoice_data_list) > 0:
+                no_si_list = [inv.get("blOrSi", "").strip() for inv in invoice_data_list if inv.get("blOrSi", "").strip()]
+            else:
+                no_si_list = []
             no_si_val = json.dumps(no_si_list)
-        vessel_name_val = form_data.get("vessel_name", "").strip()
+        
+        # Extract vessel name from first invoice or form
+        if invoice_data_list and len(invoice_data_list) > 0:
+            vessel_name_val = invoice_data_list[0].get("vesselName", "").strip()
+        else:
+            vessel_name_val = form_data.get("vessel_name", "").strip()
         
     cleaned_form_data = {
         "document_type": "PAM",
@@ -178,6 +197,7 @@ async def submit_user_document(
         "invoice_list": invoices if invoices else [""],
         "tc_details_dict": tc_details_dict,
         "no_si_list": no_si_list if no_si_list else [""],
+        "invoice_data_json": invoice_data_json_str,
     }
 
     validation_error = _validate_document_submission(cleaned_form_data)
@@ -472,6 +492,7 @@ def _default_form_data() -> dict[str, any]:
         "kode_bl": "",
         "no_si_list": [""],
         "vessel_name": "",
+        "invoice_data_json": "[]",
     }
 
 
@@ -500,11 +521,14 @@ def _validate_document_submission(form_data: dict[str, any]) -> str | None:
 
     # Validate that we have at least one non-empty invoice number
     try:
-        inv_list = json.loads(document_data.invoice_number)
+        inv_list = json.loads(document_data.invoice_number) if document_data.invoice_number else []
         if not inv_list or not any(inv.strip() for inv in inv_list):
             return "At least one Invoice Number is required."
     except Exception:
         return "Invoice Number must be a valid list."
+
+    if document_data.qty_price and not str(document_data.qty_price).strip():
+        return "Qty / Price is required."
 
     if document_data.tc not in ALLOWED_TC_OPTIONS:
         return "TC must be Yes or No."
