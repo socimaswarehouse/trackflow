@@ -634,7 +634,6 @@
                                     type="text"
                                     class="form-control"
                                     id="current-invoice-number"
-                                    name="invoice_number_input"
                                     autocomplete="off"
                                     placeholder="Enter Invoice Number"
                                 >
@@ -643,23 +642,22 @@
 
                             <!-- No BL (Import) / No SI (Export) -->
                             <div id="import-bl-field" class="mb-3" style="display: none;">
-                                <label for="kode_bl" class="form-label">No BL <span class="tf-required">*</span></label>
-                                <input type="text" class="form-control" id="kode_bl" name="kode_bl_input" placeholder="Enter No BL" autocomplete="off">
+                                <label for="current-kode-bl" class="form-label">No BL <span class="tf-required">*</span></label>
+                                <input type="text" class="form-control" id="current-kode-bl" placeholder="Enter No BL" autocomplete="off">
                             </div>
 
                             <div id="export-si-field" class="mb-3" style="display: none;">
-                                <label class="form-label">No SI <span class="tf-required">*</span></label>
-                                <input type="text" class="form-control" id="no_si_input" name="no_si_input" placeholder="Enter No SI" autocomplete="off">
+                                <label for="current-no-si" class="form-label">No SI <span class="tf-required">*</span></label>
+                                <input type="text" class="form-control" id="current-no-si" placeholder="Enter No SI" autocomplete="off">
                             </div>
 
                             <!-- Vessel Name -->
                             <div class="mb-3">
-                                <label for="vessel_name" class="form-label">Vessel Name <span class="tf-required">*</span></label>
+                                <label for="current-vessel-name" class="form-label">Vessel Name <span class="tf-required">*</span></label>
                                 <input
                                     type="text"
                                     class="form-control"
-                                    id="vessel_name"
-                                    name="vessel_name_input"
+                                    id="current-vessel-name"
                                     placeholder="Enter Vessel Name"
                                     autocomplete="off"
                                 >
@@ -1075,9 +1073,9 @@
         const tcImportOptions = document.getElementById('tc-import-options');
         const tcExportOptions = document.getElementById('tc-export-options');
         const currentInvoiceNumber = document.getElementById('current-invoice-number');
-        const kodeBl = document.getElementById('kode_bl');
-        const noSiInput = document.getElementById('no_si_input');
-        const vesselName = document.getElementById('vessel_name');
+        const currentKodeBl = document.getElementById('current-kode-bl');
+        const currentNoSi = document.getElementById('current-no-si');
+        const currentVesselName = document.getElementById('current-vessel-name');
         const saveInvoiceBtn = document.getElementById('save-invoice-btn');
         const addInvoiceBtn = document.getElementById('add-invoice-btn');
         const invoiceTabsWrapper = document.getElementById('invoice-tabs-wrapper');
@@ -1177,10 +1175,14 @@
             // ── Save Invoice Handler ────────────────────────────
             saveInvoiceBtn.addEventListener('click', function() {
                 const invoiceNumber = currentInvoiceNumber.value.trim();
-                const vesselNameVal = vesselName.value.trim();
-                const blOrSi = invoiceManager.shipmentType === 'Import' 
-                    ? kodeBl.value.trim() 
-                    : noSiInput.value.trim();
+                const vesselNameVal = currentVesselName.value.trim();
+                let blOrSi = '';
+                
+                if (invoiceManager.shipmentType === 'Import') {
+                    blOrSi = currentKodeBl.value.trim();
+                } else if (invoiceManager.shipmentType === 'Export') {
+                    blOrSi = currentNoSi.value.trim();
+                }
 
                 // Collect sub-charges
                 const subCharges = collectSubCharges();
@@ -1314,9 +1316,9 @@
 
         function resetCurrentInvoiceForm() {
             currentInvoiceNumber.value = '';
-            kodeBl.value = '';
-            noSiInput.value = '';
-            vesselName.value = '';
+            currentKodeBl.value = '';
+            currentNoSi.value = '';
+            currentVesselName.value = '';
 
             // Reset all checkboxes
             document.querySelectorAll('.tc-checkbox').forEach(cb => {
@@ -1372,12 +1374,14 @@
 
             // Populate form fields
             currentInvoiceNumber.value = invoice.invoiceNumber;
-            vesselName.value = invoice.vesselName;
+            currentVesselName.value = invoice.vesselName;
 
             if (invoiceManager.shipmentType === 'Import') {
-                kodeBl.value = invoice.blOrSi;
+                currentKodeBl.value = invoice.blOrSi;
+                currentNoSi.value = '';
             } else {
-                noSiInput.value = invoice.blOrSi;
+                currentNoSi.value = invoice.blOrSi;
+                currentKodeBl.value = '';
             }
 
             // Restore sub-charges
