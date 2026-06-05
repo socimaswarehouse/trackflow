@@ -512,15 +512,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="tf-filter-group" style="min-width:130px; flex:.6;">
-                    <label class="tf-label">Document Type</label>
-                    <select class="tf-select" name="document_type">
-                        <option value="">All Types</option>
-                        {% for dt in allowed_document_types %}
-                        <option value="{{ dt }}" {% if selected_document_type == dt %}selected{% endif %}>{{ dt }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+
                 <div class="tf-filter-group" style="min-width:140px; flex:.7;">
                     <label class="tf-label">Date From</label>
                     <input type="date" class="tf-input" name="date_from" value="{{ selected_date_from }}">
@@ -584,9 +576,9 @@
                             {% endif %}
                         </td>
                         <td style="min-width: 160px;">
-                            {% if document.invoice_list_parsed %}
+                            {% if document.invoice_details_parsed %}
                                 <div class="d-flex flex-wrap gap-1">
-                                    {% for invoice in document.invoice_list_parsed %}
+                                    {% for inv_detail in document.invoice_details_parsed %}
                                         {% if document.tc == "Yes" %}
                                             <button type="button"
                                                     class="btn p-0 border-0"
@@ -595,49 +587,54 @@
                                                     style="background: transparent; line-height: 1;"
                                                     onclick="event.stopPropagation();">
                                                 <code style="font-size:.82rem; background:#f1f5f9; padding:.15rem .4rem; border-radius:.25rem; word-break: break-all; color: var(--tf-primary-mid);">
-                                                    {{ invoice }}
+                                                    {{ inv_detail.invoiceNumber }}
                                                 </code>
                                             </button>
                                             <div class="modal fade" id="shipmentDetailsModal{{ document.id }}{{ loop.index }}" tabindex="-1" aria-labelledby="shipmentDetailsModal{{ document.id }}{{ loop.index }}Label" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title" id="shipmentDetailsModal{{ document.id }}{{ loop.index }}Label">Detail Shipment ({{ invoice }})</h5>
+                                                            <h5 class="modal-title" id="shipmentDetailsModal{{ document.id }}{{ loop.index }}Label">Detail Shipment ({{ inv_detail.invoiceNumber }})</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>
-                                                        <div class="modal-body">
+                                                        <div class="modal-body text-start">
                                                             <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
                                                                 <i class="bi bi-box-seam text-primary"></i>
                                                                 <strong>Shipment Type:</strong>
                                                                 <span class="ms-auto text-end">{{ document.tc_type or '-' }}</span>
                                                             </div>
                                                             <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
+                                                                <i class="bi bi-person text-primary"></i>
+                                                                <strong>Assign To:</strong>
+                                                                <span class="ms-auto text-end">{{ inv_detail.assignTo or '-' }}</span>
+                                                            </div>
+                                                            <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
                                                                 <i class="bi bi-ship text-primary"></i>
                                                                 <strong>Vessel:</strong>
-                                                                <span class="ms-auto text-end">{{ document.vessel_name or '-' }}</span>
+                                                                <span class="ms-auto text-end">{{ inv_detail.vesselName or '-' }}</span>
                                                             </div>
                                                             {% if document.tc_type == "Import" %}
                                                                 <div class="mb-2 pb-2 border-bottom d-flex align-items-center gap-2">
                                                                     <i class="bi bi-file-earmark-text text-primary"></i>
                                                                     <strong>No BL:</strong>
-                                                                    <span class="ms-auto text-end">{{ document.kode_bl or '-' }}</span>
+                                                                    <span class="ms-auto text-end">{{ inv_detail.blOrSi or '-' }}</span>
                                                                 </div>
                                                             {% elif document.tc_type == "Export" %}
                                                                 <div class="mb-2 pb-2 border-bottom">
                                                                     <i class="bi bi-file-earmark-binary text-primary"></i>
                                                                     <strong>No SI:</strong>
                                                                     <div class="text-muted mt-1" style="font-size: 0.85rem; word-break: break-word;">
-                                                                        {{ document.no_si_list_parsed|join(', ') if document.no_si_list_parsed else '-' }}
+                                                                        {{ inv_detail.blOrSi or '-' }}
                                                                     </div>
                                                                 </div>
                                                             {% endif %}
-                                                            {% if document.tc_charges_list %}
+                                                            {% if inv_detail.subCharges or document.tc_charges_list %}
                                                                 <div class="mt-3 mb-2"><strong>Sub-charges:</strong></div>
                                                                 <ul class="list-unstyled ps-0 mb-0">
-                                                                    {% for charge in document.tc_charges_list %}
+                                                                    {% for charge in (inv_detail.subCharges if inv_detail.subCharges else document.tc_charges_list) %}
                                                                         <li class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded">
                                                                             <span class="text-muted">{{ charge.name }}</span>
-                                                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ charge.amount or '-' }}</span>
+                                                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ charge.formatted_amount or charge.amount or '-' }}</span>
                                                                         </li>
                                                                     {% endfor %}
                                                                 </ul>
@@ -648,7 +645,7 @@
                                             </div>
                                         {% else %}
                                             <code style="font-size:.82rem; background:#f1f5f9; padding:.15rem .4rem; border-radius:.25rem; word-break: break-all; color: var(--tf-primary-mid);">
-                                                {{ invoice }}
+                                                {{ inv_detail.invoiceNumber }}
                                             </code>
                                         {% endif %}
                                     {% endfor %}
@@ -768,14 +765,8 @@
                         <input class="tf-input" id="edit_qty_price" name="qty_price" required style="border-left: none;" inputmode="numeric">
                     </div>
                 </div>
-                <div class="tf-form-group">
-                    <label class="tf-label" for="edit_tc">TC</label>
-                    <select class="tf-select" id="edit_tc" name="tc" required>
-                        {% for tc_option in allowed_tc_options %}
-                        <option value="{{ tc_option }}">{{ tc_option }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+
+
                 <div class="tf-form-group full">
                     <label class="tf-label" for="edit_notes">Remarks</label>
                     <textarea class="tf-input" id="edit_notes" name="notes" rows="4"></textarea>
@@ -1071,7 +1062,6 @@
         const elInvoice  = document.getElementById('edit_invoice_number');
         const elQty      = document.getElementById('edit_qty_price');
         const elCurrency = document.getElementById('edit_qty_currency');
-        const elTc       = document.getElementById('edit_tc');
         const elNotes    = document.getElementById('edit_notes');
         
         if (elType)     elType.value    = documentType;
@@ -1085,7 +1075,6 @@
                 ? raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                 : raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         }
-        if (elTc)    elTc.value    = tc || 'No';
         if (elNotes) elNotes.value = notes || '';
         
         if (editModal && editBackdrop) {

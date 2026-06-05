@@ -34,11 +34,11 @@ def get_public_base_url(request: Any | None = None) -> str:
 
 
 def get_admin_nik() -> str:
-    return os.getenv("ADMIN_NIK", "1234567890")
+    return os.getenv("ADMIN_NIK", "26000257")
 
 
 def get_admin_password() -> str:
-    return os.getenv("ADMIN_PASSWORD", "admin123")
+    return os.getenv("ADMIN_PASSWORD", "scm123")
 
 
 def _first_header_value(value: str | None) -> str | None:

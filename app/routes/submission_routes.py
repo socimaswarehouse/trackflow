@@ -542,6 +542,19 @@ def _validate_document_submission(form_data: dict[str, any]) -> str | None:
                 return "No SI must be a valid list."
         if not document_data.vessel_name or not document_data.vessel_name.strip():
             return "Vessel Name is required when Shipment Type is selected."
+        if document_data.invoice_numbers_json:
+            try:
+                inv_details = json.loads(document_data.invoice_numbers_json)
+                if isinstance(inv_details, list):
+                    for item in inv_details:
+                        if isinstance(item, dict):
+                            assign_to = item.get("assignTo", "").strip()
+                            if not assign_to:
+                                return "Assign To is required for each invoice."
+                            if assign_to not in ("BI", "MTA"):
+                                return "Assign To must be either BI or MTA."
+            except Exception:
+                return "Invalid invoice details structure."
 
     if document_data.status not in ALLOWED_DOCUMENT_STATUSES:
         return "Status must be Pending, Approved, or Rejected."

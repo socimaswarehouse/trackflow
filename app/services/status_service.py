@@ -117,6 +117,24 @@ def to_display_status(status: str | None) -> str:
     return STATUS_DB_TO_DISPLAY.get(status.strip().upper(), status.strip().title())
 
 
+def format_rupiah(amount_val) -> str:
+    if amount_val is None:
+        return "-"
+    amount_str = str(amount_val).strip()
+    if not amount_str:
+        return "-"
+    # Strip any non-digit character to get raw numeric value
+    digits = "".join(c for c in amount_str if c.isdigit())
+    if not digits:
+        return "-"
+    try:
+        val = int(digits)
+        # Format as Rp X.XXX.XXX
+        return f"Rp {val:,}".replace(",", ".")
+    except ValueError:
+        return amount_str
+
+
 def attach_display_status(document: Document) -> Document:
     document.status_display = to_display_status(document.status)
     
@@ -156,7 +174,7 @@ def attach_display_status(document: Document) -> Document:
 
     # 1b. Per-invoice detail parsing (from invoice_numbers_json)
     # New format: invoice_numbers_json contains array of objects with
-    # {invoiceNumber, blOrSi, vesselName, subCharges} per invoice.
+    # {invoiceNumber, blOrSi, vesselName, assignTo, subCharges} per invoice.
     # Old format: invoice_numbers_json contains just an array of strings.
     document.invoice_details_parsed = []
     if document.invoice_numbers_json:
@@ -167,11 +185,21 @@ def attach_display_status(document: Document) -> Document:
                 if isinstance(first, dict) and "invoiceNumber" in first:
                     # New per-invoice detail format
                     for item in inv_data:
+                        sub_charges_parsed = []
+                        for charge in item.get("subCharges", []):
+                            amt = charge.get("amount", "")
+                            sub_charges_parsed.append({
+                                "name": charge.get("name", ""),
+                                "amount": amt,
+                                "formatted_amount": format_rupiah(amt)
+                            })
+                        
                         document.invoice_details_parsed.append({
                             "invoiceNumber": item.get("invoiceNumber", ""),
                             "blOrSi": item.get("blOrSi", ""),
                             "vesselName": item.get("vesselName", ""),
-                            "subCharges": item.get("subCharges", []),
+                            "assignTo": item.get("assignTo", ""),
+                            "subCharges": sub_charges_parsed,
                         })
         except Exception:
             pass
@@ -184,6 +212,7 @@ def attach_display_status(document: Document) -> Document:
                 "invoiceNumber": inv_num,
                 "blOrSi": document.kode_bl or "",
                 "vesselName": document.vessel_name or "",
+                "assignTo": "",
                 "subCharges": [],
             })
         
@@ -206,7 +235,8 @@ def attach_display_status(document: Document) -> Document:
                             details_list.append(f"{charge_name}{amt_str}")
                             document.tc_charges_list.append({
                                 "name": charge_name,
-                                "amount": amt
+                                "amount": amt,
+                                "formatted_amount": format_rupiah(amt)
                             })
             except Exception:
                 pass

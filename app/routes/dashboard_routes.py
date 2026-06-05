@@ -367,7 +367,7 @@ def post_update_user_qr_document(
     invoice_number: str = Form(...),
     qty_price: str = Form(...),
     qty_currency: str = Form(default="IDR"),
-    tc: str = Form(...),
+    tc: str = Form(default="Yes"),
     status: str = Form(...),
     notes: str = Form(default=""),
     db: Session = Depends(get_db),
