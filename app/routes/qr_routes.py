@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.config import get_base_url, get_public_base_url
+from app.config import get_public_base_url
 from app.database.session import get_db
 from app.services.approver_service import (
     get_approver_by_slug,
@@ -70,8 +70,8 @@ def generate_user_qr(
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
-    base_url = get_base_url()
-    qr_slug = f"user-{user.id}"
+    base_url = get_public_base_url(request)
+    qr_slug = "document-request"
     target_url = f"{base_url}/dashboard/users"
     qr_path = generate_qr_code(qr_slug, target_url)
 
@@ -79,10 +79,10 @@ def generate_user_qr(
         request=request,
         name="qr_detail.html",
         context={
-            "entity_name": user.full_name,
-            "entity_subtitle": user.department,
-            "entity_label": "User",
-            "qr_status": "QR Ready",
+            "entity_name": "Document Request",
+            "entity_subtitle": "Dashboard admin untuk membuat document submission",
+            "entity_label": "QR User",
+            "qr_status": "Document Request QR",
             "qr_image_src": f"/qr-image/user/{user.id}",
             "qr_image_url": f"/{qr_path}",
             "target_url": target_url,
@@ -129,7 +129,7 @@ def get_user_qr_image(
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
-    base_url = get_base_url()
+    base_url = get_public_base_url(request)
     target_url = f"{base_url}/dashboard/users"
     return Response(
         content=generate_qr_png_bytes(target_url),
