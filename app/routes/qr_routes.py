@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.config import get_public_base_url
+from app.config import get_base_url, get_public_base_url
 from app.database.session import get_db
 from app.services.approver_service import (
     get_approver_by_slug,
@@ -70,9 +70,9 @@ def generate_user_qr(
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
-    base_url = get_public_base_url(request)
+    base_url = get_base_url()
     qr_slug = f"user-{user.id}"
-    target_url = f"{base_url}/submit/user/{user.id}"
+    target_url = f"{base_url}/dashboard/users"
     qr_path = generate_qr_code(qr_slug, target_url)
 
     return templates.TemplateResponse(
@@ -85,10 +85,10 @@ def generate_user_qr(
             "qr_status": "QR Ready",
             "qr_image_src": f"/qr-image/user/{user.id}",
             "qr_image_url": f"/{qr_path}",
-            "target_url": f"{base_url}/submit/user/{user.id}",
-            "open_page_url": f"{base_url}/submit/user/{user.id}",
-            "open_page_label": "Open Submission Page",
-            "page_description": "Scan QR user ini untuk mengisi data dokumen lebih dulu sebelum dokumen fisik diserahkan ke approver.",
+            "target_url": target_url,
+            "open_page_url": target_url,
+            "open_page_label": "Open Document Request",
+            "page_description": "Scan QR user ini untuk membuka dashboard Document Request. Setelah login admin, klik Create Document Submission untuk mengisi data dokumen.",
         },
     )
 
@@ -129,8 +129,8 @@ def get_user_qr_image(
     if user is None or not user.is_active:
         raise HTTPException(status_code=404, detail="User not found")
 
-    base_url = get_public_base_url(request)
-    target_url = f"{base_url}/submit/user/{user.id}"
+    base_url = get_base_url()
+    target_url = f"{base_url}/dashboard/users"
     return Response(
         content=generate_qr_png_bytes(target_url),
         media_type="image/png",

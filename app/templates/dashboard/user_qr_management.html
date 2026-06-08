@@ -203,6 +203,28 @@
         transform: translateY(0);
     }
 
+    .tf-btn-view-qr {
+        padding: 0.85rem 1.15rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        border-radius: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: var(--tf-primary-mid);
+        background: #ffffff;
+        border: 1.5px solid var(--tf-border);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .tf-btn-view-qr:hover {
+        background: var(--tf-primary-light);
+        border-color: var(--tf-primary-mid);
+        color: var(--tf-primary);
+    }
+
     .tf-btn-logout {
         padding: 0.5rem 1rem;
         font-size: 0.8rem;
@@ -408,7 +430,8 @@
             align-items: stretch;
             gap: 1.25rem;
         }
-        .tf-btn-create {
+        .tf-btn-create,
+        .tf-btn-view-qr {
             justify-content: center;
             width: 100%;
         }
@@ -462,9 +485,12 @@
             <p class="tf-page-subtitle">Pintu gerbang penyerahan dokumen melalui scan QR Code dan pengawasan operational tracking.</p>
         </div>
         <div class="tf-action-header-buttons">
-            <button type="button" class="tf-btn-create" id="btnOpenScanner">
-                <i class="bi bi-qr-code-scan"></i> Create Document Submission
-            </button>
+            <a href="/dashboard/users/generate-qr" class="tf-btn-view-qr">
+                <i class="bi bi-qr-code"></i> View QR
+            </a>
+            <a href="/dashboard/users/create-submission" class="tf-btn-create">
+                <i class="bi bi-file-earmark-plus"></i> Create Document Submission
+            </a>
             <button type="button" class="tf-btn-logout" id="btnLogout">
                 <i class="bi bi-box-arrow-left"></i> Logout
             </button>
@@ -798,45 +824,9 @@
     </div>
 </div>
 
-<!-- Scanner Modal -->
-<div class="tf-modal-backdrop" id="scannerModalBackdrop"></div>
-<div class="tf-modal" id="scannerModal" style="max-width: 480px;">
-    <div class="tf-modal-header">
-        <div class="tf-modal-title"><i class="bi bi-qr-code-scan me-2"></i>Scan QR Code Submission</div>
-        <button type="button" class="tf-modal-close" id="scannerModalCloseBtn">&times;</button>
-    </div>
-    <div class="tf-modal-body">
-        <div class="d-flex justify-content-center gap-2 mb-3">
-            <button type="button" class="btn-tf-outline active" id="btn-scan-cam" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">
-                <i class="bi bi-camera me-1"></i>Kamera HP / Web
-            </button>
-            <button type="button" class="btn-tf-outline" id="btn-scan-file" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">
-                <i class="bi bi-image me-1"></i>Upload File QR
-            </button>
-        </div>
-
-        <div id="scanner-area">
-            <div id="qr-reader" style="width: 100%; border-radius: 0.75rem; overflow: hidden; background: #fafbfe;"></div>
-            <div id="camera-error-msg" style="display: none;"></div>
-        </div>
-
-        <div id="qr-upload-container" style="display: none; text-align: center; padding: 2.5rem 1.5rem; border: 2px dashed #cbd5e1; border-radius: 0.75rem; background: #f8fafc; cursor: pointer;">
-            <i class="bi bi-cloud-arrow-up-fill" style="font-size: 2.5rem; color: var(--tf-primary-mid); opacity: 0.7;"></i>
-            <p style="font-weight: 600; margin-top: 0.5rem; font-size: 0.9rem;">Pilih foto QR Code</p>
-            <p style="font-size: 0.75rem; color: var(--tf-muted); margin-top: 0.25rem;">Klik untuk memilih dari Galeri atau Kamera</p>
-            <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
-        </div>
-    </div>
-    <div class="tf-modal-footer">
-        <button type="button" class="btn-tf-outline" id="scannerModalCancelBtn">Batal</button>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- HTML5-QRCode scanner library from UNPKG -->
-<script src="https://unpkg.com/html5-qrcode"></script>
-
 <script>
 (function() {
     // ----------------------------------------------------
@@ -903,142 +893,6 @@
         btnLogout.addEventListener('click', function() {
             sessionStorage.removeItem('tf_auth_token');
             window.location.reload();
-        });
-    }
-
-    // ----------------------------------------------------
-    // QR CODE SCANNER MODAL & LOGIC
-    // ----------------------------------------------------
-    const scannerModal = document.getElementById('scannerModal');
-    const scannerBackdrop = document.getElementById('scannerModalBackdrop');
-    const btnOpenScanner = document.getElementById('btnOpenScanner');
-    const btnCloseScanner = document.getElementById('scannerModalCloseBtn');
-    const btnCancelScanner = document.getElementById('scannerModalCancelBtn');
-    
-    let html5QrCode = null;
-    
-    function openScannerModal() {
-        if (scannerModal && scannerBackdrop) {
-            scannerModal.classList.add('show');
-            scannerBackdrop.classList.add('show');
-            startScanner();
-        }
-    }
-    
-    function closeScannerModal() {
-        stopScanner().then(() => {
-            if (scannerModal && scannerBackdrop) {
-                scannerModal.classList.remove('show');
-                scannerBackdrop.classList.remove('show');
-            }
-        });
-    }
-    
-    if (btnOpenScanner) btnOpenScanner.addEventListener('click', openScannerModal);
-    if (btnCloseScanner) btnCloseScanner.addEventListener('click', closeScannerModal);
-    if (btnCancelScanner) btnCancelScanner.addEventListener('click', closeScannerModal);
-    if (scannerBackdrop) scannerBackdrop.addEventListener('click', closeScannerModal);
-
-    function startScanner() {
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("qr-reader");
-        }
-        switchMode('camera');
-    }
-    
-    function stopScanner() {
-        return new Promise((resolve) => {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => {
-                    resolve();
-                }).catch(err => {
-                    console.error("Failed to stop scanner:", err);
-                    resolve();
-                });
-            } else {
-                resolve();
-            }
-        });
-    }
-    
-    const btnScanCam = document.getElementById('btn-scan-cam');
-    const btnScanFile = document.getElementById('btn-scan-file');
-    const scannerArea = document.getElementById('scanner-area');
-    const uploadContainer = document.getElementById('qr-upload-container');
-    
-    function switchMode(mode) {
-        stopScanner().then(() => {
-            const qrReaderEl = document.getElementById('qr-reader');
-            const errorMsgEl = document.getElementById('camera-error-msg');
-
-            if (mode === 'camera') {
-                if (btnScanCam) btnScanCam.classList.add('active');
-                if (btnScanFile) btnScanFile.classList.remove('active');
-                if (scannerArea) scannerArea.style.display = 'block';
-                if (uploadContainer) uploadContainer.style.display = 'none';
-                
-                if (qrReaderEl) qrReaderEl.style.display = 'block';
-                if (errorMsgEl) errorMsgEl.style.display = 'none';
-                
-                const qrSuccessCallback = (decodedText, decodedResult) => {
-                    if (decodedText) {
-                        stopScanner().then(() => {
-                            window.location.href = decodedText;
-                        });
-                    }
-                };
-                
-                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                
-                html5QrCode.start({ facingMode: "environment" }, config, qrSuccessCallback)
-                    .catch(err => {
-                        console.error("Camera access error:", err);
-                        if (qrReaderEl) qrReaderEl.style.display = 'none';
-                        if (errorMsgEl) {
-                            errorMsgEl.innerHTML = `
-                                <div class="text-center py-4 text-danger">
-                                    <i class="bi bi-camera-video-off-fill fs-2"></i>
-                                    <p class="mt-2 fw-semibold">Tidak dapat mengakses Kamera.</p>
-                                    <p style="font-size: 0.8rem; color: var(--tf-muted);">Pastikan izin kamera telah diberikan atau gunakan opsi Upload File.</p>
-                                </div>
-                            `;
-                            errorMsgEl.style.display = 'block';
-                        }
-                    });
-            } else {
-                if (btnScanCam) btnScanCam.classList.remove('active');
-                if (btnScanFile) btnScanFile.classList.add('active');
-                if (scannerArea) scannerArea.style.display = 'none';
-                if (uploadContainer) uploadContainer.style.display = 'block';
-            }
-        });
-    }
-    
-    if (btnScanCam) btnScanCam.addEventListener('click', () => switchMode('camera'));
-    if (btnScanFile) btnScanFile.addEventListener('click', () => switchMode('file'));
-    
-    const fileInput = document.getElementById('qr-file-input');
-    if (uploadContainer) {
-        uploadContainer.addEventListener('click', () => fileInput && fileInput.click());
-    }
-    
-    if (fileInput) {
-        fileInput.addEventListener('change', e => {
-            if (e.target.files.length === 0) {
-                return;
-            }
-            const imageFile = e.target.files[0];
-            if (!html5QrCode) {
-                html5QrCode = new Html5Qrcode("qr-reader");
-            }
-            
-            html5QrCode.scanFile(imageFile, false)
-                .then(decodedText => {
-                    window.location.href = decodedText;
-                })
-                .catch(err => {
-                    alert("QR Code tidak terdeteksi. Silakan coba upload gambar QR code yang lebih jelas.");
-                });
         });
     }
 

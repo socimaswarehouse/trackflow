@@ -275,10 +275,21 @@ def generate_user_qr_from_dashboard(
             status_code=303,
         )
 
-    return RedirectResponse(
-        url=f"/dashboard/users?generated=1&qr_user_id={generated_user.id}",
-        status_code=303,
-    )
+    return RedirectResponse(url=f"/generate-user-qr/{generated_user.id}", status_code=303)
+
+
+@router.get("/dashboard/users/create-submission", tags=["Dashboard"])
+def open_user_document_submission(
+    db: Session = Depends(get_db),
+):
+    submission_user = get_preferred_qr_user(db)
+    if submission_user is None:
+        return RedirectResponse(
+            url="/dashboard/users?error=Belum ada user aktif untuk membuat document submission.",
+            status_code=303,
+        )
+
+    return RedirectResponse(url=f"/submit/user/{submission_user.id}", status_code=303)
 
 
 @router.post("/dashboard/users/documents/add", tags=["Dashboard"])
@@ -572,7 +583,7 @@ def _prepare_generated_user_card(
         return None
 
     user.qr_image_url = f"/qr-image/user/{user.id}"
-    user.qr_target_url = f"/submit/user/{user.id}"
+    user.qr_target_url = "/dashboard/users"
     return user
 
 
